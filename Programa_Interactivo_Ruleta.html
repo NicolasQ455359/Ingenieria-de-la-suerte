@@ -710,7 +710,39 @@
             backdrop-filter: blur(10px);
             z-index: 10;
         }
-
+        .reset-camera-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(17, 17, 17, 0.85);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #D4AF37;
+            font-family: "Outfit", sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .reset-camera-btn:hover {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: #D4AF37;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(212, 175, 55, 0.25);
+        }
+        .reset-camera-btn i {
+            width: 14px;
+            height: 14px;
+        }
     </style>
 </head>
 <body>
@@ -753,6 +785,9 @@
                     <div class="stage-wrap">
                         <div class="stage-canvas" style="position: relative;">
                             <div id="threeCanvas"></div>
+                            <button id="btnResetCamera" class="reset-camera-btn" style="display: none;">
+                                <i data-lucide="refresh-cw"></i> Reestablecer Vista
+                            </button>
                             
                             <!-- Infographic SVG Overlay -->
                             <svg id="infographicOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 25; width: 100%; height: 100%; display: none;">
@@ -1349,6 +1384,7 @@
         let targetOpacity = 1.0;
         let isExploded = false;
         let isTransitioning = false;
+        let currentMode = 'general';
 
         // -- Variables de Raycasting y Selección --
         const raycaster = new THREE.Raycaster();
@@ -1488,6 +1524,8 @@
             });
             
             scene.add(object);
+            const btnReset = document.getElementById('btnResetCamera');
+            if (btnReset) btnReset.style.display = 'flex';
             return object;
         }
 
@@ -1775,11 +1813,28 @@
             
             if (ruletaModel) ruletaModel.visible = true;
             isTransitioning = true;
+            currentMode = mode;
         }
 
         document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {
             btn.addEventListener("click", () => setMode(btn.dataset.mode));
         });
+
+        const btnResetCamera = document.getElementById('btnResetCamera');
+        if (btnResetCamera) {
+            btnResetCamera.addEventListener('click', () => {
+                isTransitioning = true;
+                targetCameraPos.set(0, 150, 400);
+                targetCameraLookAt.set(0, 0, 0);
+                
+                if (currentMode === 'exploded') {
+                    targetCameraPos.set(0, 180, 520);
+                } else if (currentMode === 'zoom') {
+                    targetCameraPos.set(0, 80, 150);
+                    targetCameraLookAt.set(0, -20, 50);
+                }
+            });
+        }
 
         setMode("general");
     </script>

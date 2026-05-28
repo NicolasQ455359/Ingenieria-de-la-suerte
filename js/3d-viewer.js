@@ -46,6 +46,7 @@ export function init3D() {
     let targetOpacity = 1.0;
     let isExploded = false;
     let isTransitioning = false;
+    let currentMode = 'general';
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2(-1000, -1000);
@@ -152,6 +153,8 @@ export function init3D() {
         });
         
         scene.add(object);
+        const btnReset = document.getElementById('btnResetCamera');
+        if (btnReset) btnReset.style.display = 'flex';
         return object;
     }
 
@@ -352,11 +355,28 @@ export function init3D() {
         if (ruletaModel) ruletaModel.visible = (mode !== 'exploded');
         if (ruletaVidrioModel) ruletaVidrioModel.visible = (mode === 'exploded');
         isTransitioning = true;
+        currentMode = mode;
     }
 
     document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {
         btn.addEventListener("click", () => setMode(btn.dataset.mode));
     });
+
+    const btnResetCamera = document.getElementById('btnResetCamera');
+    if (btnResetCamera) {
+        btnResetCamera.addEventListener('click', () => {
+            isTransitioning = true;
+            targetCameraPos.set(0, 150, 400);
+            targetCameraLookAt.set(0, 0, 0);
+            
+            if (currentMode === 'exploded') {
+                targetCameraPos.set(0, 180, 520);
+            } else if (currentMode === 'zoom') {
+                targetCameraPos.set(0, 80, 150);
+                targetCameraLookAt.set(0, -20, 50);
+            }
+        });
+    }
 
     setMode("general");
 }
