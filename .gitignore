@@ -1,0 +1,13 @@
+# Blender & 3D Import caches
+TDImportCache/
+
+# Operating System files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Agentic / system generated files
+.gemini/
+.system_generated/
+scratch/

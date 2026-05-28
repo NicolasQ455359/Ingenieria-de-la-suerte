@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingeniería de la Suerte | Programa Interactivo</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    
+    <!-- P5.js Library for the map -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Base 64 Model Data -->
+    <script src="model_base64.js"></script>
+    
+    <!-- Base 64 Map Image -->
+    <script src="map_base64.js"></script>
+
+    <style>
+        :root {
+            --bg: #111111; 
+            --emerald: #0A4A2F; 
+            --gold: #D4AF37; 
+            --red: #B71C1C; 
+            
+            --gold-soft: #ebd07a;
+            --line: rgba(212, 175, 55, 0.22);
+            --text: #ebe8d9;
+            --muted: #8e9590;
+            --shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+            --ease: 400ms cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /* --- INFOGRAPHIC BUBBLES --- */
+        .info-bubble {
+            position: absolute;
+            background: rgba(17, 17, 17, 0.92);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #ebe8d9;
+            width: 200px;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 10px rgba(212, 175, 55, 0.15);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            z-index: 30;
+        }
+        .info-bubble:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 4px 25px rgba(212, 175, 55, 0.35);
+        }
+        .bubble-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .bubble-tag {
+            font-family: "Space Mono", monospace;
+            font-size: 0.6rem;
+            color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 4px;
+            padding: 2px 6px;
+            letter-spacing: 0.05em;
+        }
+        .info-bubble h4 {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #ebe8d9;
+        }
+        .info-bubble p {
+            margin: 4px 0 0;
+            color: #a4aaa5;
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Outfit", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 15% 12%, rgba(10, 74, 47, 0.4), transparent 30%),
+                radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.08), transparent 30%),
+                linear-gradient(135deg, #090909 0%, #111111 50%, #0d0d0d 100%);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1, h2, h3, .visual-mode, .status-chip {
+            font-family: "Outfit", sans-serif;
+        }
+        
+        .technical-text, .status-chip, .panel-subtitle, dt, dd, .focus-pill strong, .footer-note, .note-item span {
+            font-family: "Space Mono", monospace;
+        }
+
+        /* --- GLOBAL NAVIGATION --- */
+        .global-nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid var(--line);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .nav-tab {
+            background: transparent;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: var(--muted);
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-family: "Outfit", sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all var(--ease);
+        }
+
+        .nav-tab:hover {
+            border-color: var(--gold);
+            color: var(--text);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .nav-tab.active {
+            background: var(--gold);
+            color: #000;
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            display: none;
+            flex: 1;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- SCREEN 1: 3D VIEWER (Original Layout) --- */
+        .app-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 24px;
+            width: 100%;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .viewport-panel,
+        .side-panel {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(17, 17, 17, 0.85), rgba(10, 10, 10, 0.95));
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+        }
+
+        .viewport-panel {
+            display: grid;
+            grid-template-rows: auto auto minmax(0, 1fr);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 20px 28px 16px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+            background: linear-gradient(90deg, rgba(10, 74, 47, 0.2) 0%, transparent 100%);
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: clamp(1.4rem, 2vw, 1.8rem);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--gold);
+        }
+
+        .status-chip,
+        .visual-mode {
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+            padding: 6px 10px;
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            white-space: nowrap;
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 16px 28px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .mode-btn {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all var(--ease);
+            font: inherit;
+            font-size: 0.9rem;
+        }
+
+        .mode-btn:hover, .mode-btn.is-active {
+            border-color: var(--gold);
+            color: var(--text);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .visual-stage {
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .visual-stage::before {
+            content: "";
+            position: absolute;
+            inset: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            pointer-events: none;
+            border-radius: 12px;
+            z-index: 10;
+        }
+
+        .visual-header {
+            position: absolute;
+            top: 40px;
+            left: 45px;
+            right: 45px;
+            z-index: 20;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            pointer-events: none;
+        }
+
+        .visual-header h2 {
+            margin: 0;
+            font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #fff;
+        }
+
+        .stage-wrap {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            position: relative;
+            padding-top: 60px;
+        }
+
+        .stage-canvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            display: grid;
+            place-items: center;
+            background:
+                linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #threeCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            transition: opacity var(--ease);
+        }
+
+        .placeholder-image {
+            position: absolute;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity var(--ease), transform var(--ease);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Modos dinámicos en 3D: siempre mostramos el canvas y ocultamos las imágenes */
+        #threeCanvas { opacity: 1 !important; pointer-events: auto !important; }
+        .placeholder-image { display: none !important; }
+
+
+        .side-panel {
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .side-panel h2 {
+            margin: 0;
+            color: var(--gold);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .side-panel h2::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+        }
+
+        .control-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .control-mode-btn {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text);
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all var(--ease);
+            font: inherit;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .control-mode-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--gold);
+            transform: scaleY(0);
+            transition: transform var(--ease);
+            transform-origin: center;
+        }
+
+        .control-mode-btn:hover, .control-mode-btn.is-active {
+            border-color: rgba(212, 175, 55, 0.3);
+            background: rgba(212, 175, 55, 0.05);
+        }
+        
+        .control-mode-btn.is-active::before { transform: scaleY(1); }
+
+        .control-icon {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            color: var(--gold);
+        }
+
+        .info-card {
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-top: 3px solid var(--gold);
+            border-radius: 12px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(17, 17, 17, 0.9), rgba(10, 10, 10, 0.95));
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .info-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .info-card-icon {
+            width: 34px;
+            height: 34px;
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .info-card-title-group h3 { color: #fff; margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .info-card-title-group span { color: var(--muted); font-size: 0.7rem; font-family: "Space Mono", monospace; text-transform: uppercase;}
+        
+        .info-card-desc { margin: 0; line-height: 1.5; font-size: 0.85rem; color: var(--text); }
+        
+        .info-card-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+        .spec-item { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .spec-item dt { color: var(--muted); font-size: 0.65rem; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; font-family: "Space Mono", monospace;}
+        .spec-item dt svg { width: 12px; height: 12px; color: var(--gold); }
+        .spec-item dd { margin: 0; color: var(--gold-soft); font-size: 0.8rem; font-weight: 600; font-family: "Space Mono", monospace;}
+        .spec-item.full-width { grid-column: 1 / -1; }
+
+        .info-card-stats { display: grid; gap: 10px; margin-top: 4px; }
+        .stat-row { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-family: "Space Mono", monospace; }
+        .stat-label { width: 80px; color: var(--muted); text-transform: uppercase; }
+        .stat-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; background: var(--emerald); border-radius: 3px; transition: width 1s cubic-bezier(0.25, 1, 0.5, 1); }
+        .stat-bar-fill.red { background: var(--red); }
+        .stat-bar-fill.gold { background: var(--gold); }
+        .stat-value { width: 35px; text-align: right; color: var(--text); font-weight: bold; }
+        
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            transition: opacity 0.5s ease;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(212, 175, 55, 0.2);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- SCREEN 2: DATA ANALYTICS --- */
+        #screen-data {
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .timeline-hud-container {
+            border: 1px solid var(--gold);
+            background: linear-gradient(90deg, rgba(10, 74, 47, 0.3), rgba(17, 17, 17, 0.9));
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .timeline-hud-container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
+            pointer-events: none;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline-header h3 {
+            margin: 0;
+            color: var(--gold);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        #timeline-time-display {
+            font-family: "Space Mono", monospace;
+            color: var(--emerald);
+            background: rgba(10, 74, 47, 0.2);
+            padding: 5px 15px;
+            border-radius: 4px;
+            border: 1px solid var(--emerald);
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(10, 74, 47, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .cyber-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cyber-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--gold);
+            transition: transform 0.1s;
+        }
+
+        .cyber-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        .timeline-ticks {
+            display: flex;
+            justify-content: space-between;
+            font-family: "Space Mono", monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+            padding: 0 10px;
+        }
+
+        .data-shell {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .chart-card {
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(17, 17, 17, 0.85), rgba(10, 10, 10, 0.95));
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .chart-card:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .chart-card::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .chart-card:hover::after {
+            opacity: 1;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+
+        .chart-title {
+            font-family: "Outfit", sans-serif;
+            color: var(--gold);
+            margin: 0;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        
+        .chart-subtitle {
+            font-family: "Space Mono", monospace;
+            color: var(--muted);
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+
+        .chart-container {
+            flex: 1;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            min-height: 250px;
+        }
+
+        /* --- SCREEN 3: MAP --- */
+        .map-shell {
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            flex: 1;
+        }
+
+        .map-container {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow);
+            background: #000;
+        }
+        
+        #p5-canvas-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+        }
+
+        .map-overlay-panel {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 320px;
+            background: rgba(17, 17, 17, 0.9);
+            border: 1px solid var(--gold);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL NAVIGATION -->
+    <nav class="global-nav">
+        <button class="nav-tab active" data-target="screen-3d">INSPECCIÓN 3D</button>
+        <button class="nav-tab" data-target="screen-data">ANÁLISIS DE DATOS</button>
+        <button class="nav-tab" data-target="screen-map">MAPA INTERACTIVO</button>
+    </nav>
+
+    <!-- SCREEN 1: 3D VIEWER -->
+    <main class="screen active" id="screen-3d">
+        <div class="app-shell">
+            <section class="viewport-panel mode-general" id="appFrame">
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                    <div class="technical-text" style="color: var(--gold)">CARGANDO TELEMETRÍA 3D...</div>
+                </div>
+                
+                <header class="topbar">
+                    <h1>Ingeniería de la Suerte</h1>
+                    <div class="status-chip" id="modeChip">STATUS: [VISTA GENERAL]</div>
+                </header>
+
+                <nav class="mode-tabs" aria-label="Vistas del programa">
+                    <button class="mode-btn is-active" data-mode="general">Vista General 3D</button>
+                    <button class="mode-btn" data-mode="section">Corte Transversal</button>
+                    <button class="mode-btn" data-mode="exploded">Despiece</button>
+                    <button class="mode-btn" data-mode="transparency">Transparencia</button>
+                    <button class="mode-btn" data-mode="zoom">Detalle Pista</button>
+                </nav>
+
+                <section class="visual-stage">
+                    <div class="visual-header">
+                        <h2>Inspección de Sistema</h2>
+                        <div class="visual-mode" id="stageTitle">VISTA GENERAL 3D</div>
+                    </div>
+
+                    <div class="stage-wrap">
+                        <div class="stage-canvas" style="position: relative;">
+                            <div id="threeCanvas"></div>
+                            
+                            <!-- Infographic SVG Overlay -->
+                            <svg id="infographicOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 25; width: 100%; height: 100%; display: none;">
+                                <defs>
+                                    <marker id="arrowGold" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#D4AF37" />
+                                    </marker>
+                                </defs>
+                            </svg>
+
+                            <!-- Floating Infographic Labels -->
+                            <div id="infographicLabels" style="position: absolute; inset: 0; pointer-events: none; z-index: 26; display: none;">
+                                <div id="label-glass" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">PROTECCIÓN</span>
+                                        <h4>Cúpula de Vidrio</h4>
+                                    </div>
+                                    <p>Policarbonato termoconformado. Sella y protege la pista de giro.</p>
+                                </div>
+                                <div id="label-separators" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">ROTOR</span>
+                                        <h4>Plato y Casillas</h4>
+                                    </div>
+                                    <p>Aluminio calibrado con deflectores para aleatoriedad óptima.</p>
+                                </div>
+                                <div id="label-shaft" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">MECANISMO</span>
+                                        <h4>Eje de Rotación</h4>
+                                    </div>
+                                    <p>Pivot cerámico de ultra-baja fricción para giros prolongados.</p>
+                                </div>
+                                <div id="label-bowl" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">BASE</span>
+                                        <h4>Taza Cóncava</h4>
+                                    </div>
+                                    <p>Madera maciza pulida y chasis pesado amortiguador de vibraciones.</p>
+                                </div>
+                            </div>
+
+                            <img src="imagenes pantallas/corte.png" class="placeholder-image img-section" alt="Corte Transversal" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/despiece.png" class="placeholder-image img-exploded" alt="Despiece" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/transparencia.png" class="placeholder-image img-transparency" alt="Transparencia" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/zoom.png" class="placeholder-image img-zoom" alt="Zoom" onerror="this.src='Imagen explicativa.png';">
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <aside class="side-panel">
+                <div>
+                    <h2>Panel de Control HUD</h2>
+                    <p class="panel-subtitle">> Seleccione un modo para aislar sistemas estructurales.</p>
+                </div>
+
+                <div class="control-list">
+                    <button class="control-mode-btn" data-mode="section">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span class="technical-text">MODO: CORTE</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="exploded">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="3"></rect><rect x="5" y="10.5" width="14" height="3"></rect><rect x="5" y="17" width="14" height="3"></rect></svg>
+                        <span class="technical-text">MODO: DESPIECE</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="transparency">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="8" height="12"></rect><rect x="12" y="6" width="8" height="12" opacity="0.5"></rect></svg>
+                        <span class="technical-text">MODO: TRANSPARENCIA</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="zoom">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+                        <span class="technical-text">MODO: DETALLE</span>
+                    </button>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i data-lucide="shield-check" class="info-card-icon" id="infoIcon"></i>
+                        <div class="info-card-title-group">
+                            <h3 id="infoTitle">Vidrio superior</h3>
+                            <span id="infoSub">Cobertura Protectora</span>
+                        </div>
+                    </div>
+                    
+                    <p class="info-card-desc" id="infoSummary">Cubierta de policarbonato que protege la trayectoria de la bola.</p>
+                    
+                    <dl class="info-card-specs">
+                        <div class="spec-item">
+                            <dt><i data-lucide="box"></i> Material</dt>
+                            <dd id="infoMaterial">Policarbonato</dd>
+                        </div>
+                        <div class="spec-item">
+                            <dt><i data-lucide="weight"></i> Masa</dt>
+                            <dd id="infoWeight">4.2 kg</dd>
+                        </div>
+                        <div class="spec-item full-width">
+                            <dt><i data-lucide="cpu"></i> Función Técnica</dt>
+                            <dd id="infoFunction">Sellar la parte superior de la ruleta.</dd>
+                        </div>
+                    </dl>
+
+                    <div class="info-card-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Durabilidad</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill emerald" id="statDurability" style="width: 95%"></div></div>
+                            <span class="stat-value" id="statDurabilityVal">95%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Fricción</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill red" id="statFriction" style="width: 15%"></div></div>
+                            <span class="stat-value" id="statFrictionVal">15%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Precisión</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill gold" id="statPrecision" style="width: 80%"></div></div>
+                            <span class="stat-value" id="statPrecisionVal">80%</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- SCREEN 2: DATA ANALYTICS (HUD + Timeline) -->
+    <main class="screen" id="screen-data">
+        <div class="timeline-hud-container">
+            <div class="timeline-header">
+                <h3>SIMULACIÓN TEMPORAL</h3>
+                <span id="timeline-time-display">20:00 - Expectativas Claras</span>
+            </div>
+            <input type="range" min="0" max="4" value="0" class="cyber-slider" id="timeSlider">
+            <div class="timeline-ticks">
+                <span>8 PM</span>
+                <span>10 PM</span>
+                <span>12 AM</span>
+                <span>2 AM</span>
+                <span>4 AM</span>
+            </div>
+        </div>
+
+        <div class="data-shell">
+            <!-- Chart 1: Exploratorio -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">¿Más riesgo significa más ganancias?</h3>
+                        <div class="chart-subtitle">> ANÁLISIS EXPLORATORIO (DISPERSIÓN)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-scatter-container">
+                    <canvas id="chartScatter"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Línea -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">Evolución del dinero durante la noche</h3>
+                        <div class="chart-subtitle">> TELEMETRÍA TEMPORAL (LÍNEA)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-line-container">
+                    <canvas id="chartLine"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 3: Dona -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">¿De dónde venía el dinero para apostar?</h3>
+                        <div class="chart-subtitle">> DISTRIBUCIÓN ESTADÍSTICA (DONA)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-donut-container">
+                    <canvas id="chartDonut"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 4: Barras -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">Cuando el sistema parecía funcionar</h3>
+                        <div class="chart-subtitle">> RENDIMIENTO DE EVENTOS (BARRAS)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-bar-container">
+                    <canvas id="chartBar"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- SCREEN 3: INTERACTIVE MAP (p5.js) -->
+    <main class="screen" id="screen-map">
+        <div class="map-shell">
+            <div class="map-container">
+                <div id="p5-canvas-container"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- --- SCRIPTS --- -->
+    
+    <!-- Script for Tab Navigation -->
+    <script>
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Update active tab button
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show target screen
+                const targetId = tab.getAttribute('data-target');
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                document.getElementById(targetId).classList.add('active');
+                
+                // Trigger resize for ThreeJS and p5.js
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+
+        // Initialize Lucide icons
+        if(window.lucide) {
+            lucide.createIcons();
+        }
+    </script>
+
+    <!-- Script for P5.js Map Integration (Instance Mode) -->
+    <script>
+    (function() {
+      const mapSketch = function(p) {
+        // === STATE ===
+        let mapImg;
+        let mapMode = "start";
+        let mapStep = 0;
+        let camX = 0, camY = 0, camZoom = 1;
+        let targetX = 0, targetY = 0, targetZoom = 1;
+        let animProgress = 1;
+        let hasExploded = true;
+        let particles = [];
+        let currentMoney = 0;
+        let mapW, mapH, imgX, imgY;
+        let casinos = [];
+
+        // HUD Colors
+        const COL_BG = [17,17,17];
+        const COL_GOLD = [212,175,55];
+        const COL_TEXT = [235,232,217];
+        const COL_EMERALD = [10,74,47];
+        const COL_RED = [183,28,28];
+
+        const casinosData = [
+          {name:"Casino Hollywood – Milla de Oro", px:0.505, py:0.770, route:[]},
+          {name:"Casino Río Medellín", px:0.540, py:0.470, route:[{px:0.505,py:0.770},{px:0.525,py:0.650},{px:0.540,py:0.470}]},
+          {name:"Casino Broadway Unicentro", px:0.420, py:0.430, route:[{px:0.540,py:0.470},{px:0.480,py:0.450},{px:0.420,py:0.430}]},
+          {name:"Casino Broadway 70", px:0.400, py:0.335, route:[{px:0.420,py:0.430},{px:0.410,py:0.380},{px:0.400,py:0.335}]},
+          {name:"Casino Broadway 80", px:0.380, py:0.270, route:[{px:0.400,py:0.335},{px:0.390,py:0.300},{px:0.380,py:0.270}]},
+          {name:"Casino Elite Class", px:0.435, py:0.450, route:[{px:0.380,py:0.270},{px:0.370,py:0.360},{px:0.435,py:0.450}]}
+        ];
+        const stories = [
+          "Enero de 2025: Samuel regresa a un casino con su amigo. Sin mayor expectativa juegan ruleta física y tienen una ganancia de $1.500.000, motivo de orgullo en redes.",
+          "Jerónimo lo contacta. Crean el sistema de 'doblar al perder' apostando a un color. La táctica rinde frutos, dejándolos confiados y ganando $3.000.000 esa noche.",
+          "La ilusión se rompe a pedazos. Jerónimo apuesta a escondidas $10 millones de su negocio familiar. La noche huele a ruina y terminan perdiendo el 100% del dinero.",
+          "Cambian y apuestan por sectores, de pronto ocurre el milagro: ¡Empieza la racha de oro! Se recuperan en Broadway 70 y el dinero se dispara meteóricamente hasta 22 millones.",
+          "La avaricia despierta; necesitaban 30... y llegó la caída. Las pérdidas golpean repetidamente. Deciden frenar y escapan a las 4 a.m., desplomándose a la mitad del fondo.",
+          "Regresan a recuperar todo un sábado en la mañana. El esfuerzo es inútil y los bolsillos quedan vacíos. Jerónimo confiesa a sus padres. La historia se corta de tajo a $0."
+        ];
+        const money = [1500000, 3000000, 0, 22000000, 15000000, 0];
+
+        // === SETUP ===
+        p.setup = function() {
+          const c = document.getElementById('p5-canvas-container');
+          const canvas = p.createCanvas(c.clientWidth, c.clientHeight);
+          canvas.parent('p5-canvas-container');
+          // Load map from base64
+          if (typeof MAP_BASE64 !== 'undefined') { mapImg = p.loadImage(MAP_BASE64); }
+          p.textFont("Outfit");
+          currentMoney = 0;
+          // Delay layout calc until image is ready
+          setTimeout(function(){ if(mapImg) recalcLayout(); }, 500);
+        };
+
+        p.windowResized = function() {
+          const c = document.getElementById('p5-canvas-container');
+          if(c.clientWidth > 0 && c.clientHeight > 0) {
+            p.resizeCanvas(c.clientWidth, c.clientHeight);
+            if(mapImg && mapImg.width > 0) recalcLayout();
+          }
+        };
+
+        function recalcLayout() {
+          let sf = p.min(p.width / mapImg.width, p.height / mapImg.height);
+          mapW = mapImg.width * sf; mapH = mapImg.height * sf;
+          imgX = (p.width - mapW) / 2; imgY = (p.height - mapH) / 2;
+          casinos = casinosData.map(function(cd) {
+            return {name:cd.name, x:imgX+cd.px*mapW, y:imgY+cd.py*mapH, route:cd.route};
+          });
+        }
+
+        // === DRAW ===
+        p.draw = function() {
+          p.background(COL_BG[0], COL_BG[1], COL_BG[2]);
+          if (!mapImg || mapImg.width === 0) {
+            p.fill(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]);
+            p.textAlign(p.CENTER,p.CENTER); p.textSize(16);
+            p.text("Cargando mapa...", p.width/2, p.height/2);
+            return;
+          }
+          if (casinos.length === 0) recalcLayout();
+
+          // Story logic
+          if (mapMode === "story") {
+            let diff = money[mapStep] - currentMoney;
+            currentMoney += diff * 0.1;
+            if (animProgress < 1) { animProgress += 0.005; if (animProgress > 1) animProgress = 1; }
+            if (animProgress >= 1 && !hasExploded) {
+              hasExploded = true;
+              let isWin = mapStep === 0 ? true : (money[mapStep] >= money[mapStep-1]);
+              createExplosion(casinos[mapStep].x, casinos[mapStep].y, isWin);
+            }
+          }
+
+          // Camera
+          if (mapMode === "start") {
+            let cx = imgX + mapW/2, cy = imgY + mapH/2;
+            targetZoom = 1.25;
+            targetX = p.width/2 - cx*targetZoom + p.sin(p.frameCount*0.002)*150*targetZoom;
+            targetY = p.height/2 - cy*targetZoom + p.cos(p.frameCount*0.0015)*100*targetZoom;
+          } else if (mapMode === "story" && animProgress < 1) {
+            let ruta = casinos[mapStep].route;
+            if (ruta && ruta.length > 1) {
+              let tip = getRouteTip(ruta, animProgress);
+              if (tip) { targetZoom = 1.8; targetX = p.width/2 - tip.x*targetZoom; targetY = p.height/2 - tip.y*targetZoom; }
+            }
+          } else if (mapMode === "story" && animProgress === 1) {
+            let c = casinos[mapStep];
+            targetZoom = 1.5; targetX = p.width/2 - c.x*targetZoom; targetY = p.height/2 - c.y*targetZoom;
+          }
+          camX = p.lerp(camX, targetX, 0.08);
+          camY = p.lerp(camY, targetY, 0.08);
+          camZoom = p.lerp(camZoom, targetZoom, 0.08);
+
+          p.push();
+          p.translate(camX, camY); p.scale(camZoom);
+          p.tint(200); p.image(mapImg, imgX, imgY, mapW, mapH); p.noTint();
+          drawRoute(); drawCasinos(); drawParticles();
+          p.pop();
+          drawLabels(); drawUI();
+        };
+
+        // === ROUTE TIP ===
+        function getRouteTip(routeArray, progress) {
+          let pts = routeArray.map(function(pt){return {x:imgX+pt.px*mapW, y:imgY+pt.py*mapH};});
+          let totalLen=0, segLens=[];
+          for(let i=0;i<pts.length-1;i++){let d=p.dist(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y);segLens.push(d);totalLen+=d;}
+          if(totalLen===0) return pts[0];
+          let curLen=totalLen*progress, acc=0;
+          for(let i=0;i<pts.length-1;i++){
+            let na=acc+segLens[i];
+            if(progress>=1||curLen>=na){if(i===pts.length-2)return pts[pts.length-1];}
+            else{let sp=(curLen-acc)/segLens[i];return{x:p.lerp(pts[i].x,pts[i+1].x,sp),y:p.lerp(pts[i].y,pts[i+1].y,sp)};}
+            acc=na;
+          }
+          return pts[pts.length-1];
+        }
+
+        // === DRAW CASINOS ===
+        function drawCasinos() {
+          for(let i=0;i<casinos.length;i++){
+            let c=casinos[i];
+            let isVis=(mapMode==="explore")||(mapMode==="story"&&i<=mapStep);
+            if(isVis){
+              let mx=(p.mouseX-camX)/camZoom, my=(p.mouseY-camY)/camZoom;
+              let hover=p.dist(mx,my,c.x,c.y)<15;
+              p.fill(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2],190); p.noStroke();
+              p.ellipse(c.x,c.y,hover?16:10);
+              if(i===mapStep&&mapMode==="story"){
+                let pp=(p.frameCount*0.015)%1, ps=10+pp*30, pa=255*(1-pp);
+                p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2],pa); p.strokeWeight(2); p.noFill();
+                p.ellipse(c.x,c.y,ps);
+              }
+            }
+          }
+        }
+
+        // === DRAW LABELS ===
+        function drawLabels() {
+          for(let ci=0;ci<casinos.length;ci++){
+            let c=casinos[ci];
+            let mx=(p.mouseX-camX)/camZoom, my=(p.mouseY-camY)/camZoom;
+            if(p.dist(mx,my,c.x,c.y)<15){
+              let sx=c.x*camZoom+camX, sy=c.y*camZoom+camY;
+              let tw=p.textWidth(c.name)+16, rx=sx+8;
+              if(rx+tw>p.width) rx=sx-tw-16;
+              p.fill(COL_BG[0],COL_BG[1],COL_BG[2],245);
+              p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]); p.strokeWeight(1);
+              p.rect(rx,sy-14,tw,22,6);
+              p.fill(COL_TEXT[0],COL_TEXT[1],COL_TEXT[2]); p.noStroke();
+              p.textSize(12); p.textAlign(p.LEFT,p.CENTER); p.text(c.name,rx+8,sy-2);
+            }
+          }
+        }
+
+        // === DRAW ROUTE ===
+        function drawRoute() {
+          for(let i=1;i<=mapStep;i++){
+            let ruta=casinos[i].route;
+            if(i===mapStep&&mapMode==="story") drawStreetRoute(ruta,animProgress,true);
+            else drawStreetRoute(ruta,1,false);
+          }
+        }
+        function drawStreetRoute(routeArray, progress, isAnim) {
+          if(!routeArray||routeArray.length<2) return;
+          let pts=routeArray.map(function(pt){return{x:imgX+pt.px*mapW,y:imgY+pt.py*mapH};});
+          let totalLen=0, segLens=[];
+          for(let i=0;i<pts.length-1;i++){let d=p.dist(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y);segLens.push(d);totalLen+=d;}
+          if(totalLen===0) return;
+          let curLen=totalLen*progress;
+          if(!isAnim){
+            p.drawingContext.setLineDash([6,6]); p.drawingContext.lineDashOffset=-p.frameCount*0.4;
+            p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2],150); p.strokeWeight(3);
+          } else {
+            p.drawingContext.setLineDash([]); p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]); p.strokeWeight(4);
+          }
+          p.strokeJoin(p.ROUND); p.strokeCap(p.ROUND); p.noFill();
+          p.beginShape(); p.vertex(pts[0].x,pts[0].y);
+          let acc=0, tipX=pts[0].x, tipY=pts[0].y;
+          for(let i=0;i<pts.length-1;i++){
+            let na=acc+segLens[i];
+            if(progress>=1||curLen>=na){p.vertex(pts[i+1].x,pts[i+1].y);tipX=pts[i+1].x;tipY=pts[i+1].y;}
+            else{let pr=(curLen-acc)/segLens[i];tipX=p.lerp(pts[i].x,pts[i+1].x,pr);tipY=p.lerp(pts[i].y,pts[i+1].y,pr);p.vertex(tipX,tipY);break;}
+            acc=na;
+          }
+          p.endShape(); p.drawingContext.setLineDash([]);
+          if(isAnim&&progress>0&&progress<1){
+            p.fill(COL_BG[0],COL_BG[1],COL_BG[2]); p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]); p.strokeWeight(2);
+            p.ellipse(tipX,tipY,10);
+          }
+        }
+
+        // === PARTICLES ===
+        function createExplosion(x,y,isWin) {
+          let n=isWin?40:30;
+          for(let i=0;i<n;i++){let a=p.random(p.TWO_PI),s=p.random(1.5,6);particles.push({x:x,y:y,vx:p.cos(a)*s,vy:p.sin(a)*s,life:255,isWin:isWin});}
+        }
+        function drawParticles() {
+          for(let i=particles.length-1;i>=0;i--){
+            let pt=particles[i]; pt.x+=pt.vx; pt.y+=pt.vy; pt.life-=8; pt.vx*=0.94; pt.vy*=0.94;
+            if(pt.life<=0){particles.splice(i,1);}
+            else{p.noStroke();if(pt.isWin)p.fill(COL_EMERALD[0],COL_EMERALD[1],COL_EMERALD[2],pt.life);else p.fill(COL_RED[0],COL_RED[1],COL_RED[2],pt.life);p.ellipse(pt.x,pt.y,p.map(pt.life,0,255,1,6));}
+          }
+        }
+
+        // === UI ===
+        function drawUI() {
+          if(mapMode==="start"){
+            p.fill(COL_BG[0],COL_BG[1],COL_BG[2],220); p.noStroke(); p.rect(0,0,p.width,p.height);
+            p.fill(COL_TEXT[0],COL_TEXT[1],COL_TEXT[2]); p.textAlign(p.CENTER,p.CENTER);
+            p.textStyle(p.BOLD); p.textSize(28); p.text("Historia y Apuestas en",p.width/2,p.height/2-60);
+            p.textSize(34); p.fill(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]); p.text("MEDELLÍN",p.width/2,p.height/2-20);
+            p.textStyle(p.NORMAL); p.textSize(16); p.fill(150);
+            p.text("Acompaña a Samuel y Jerónimo a través de la ciudad",p.width/2,p.height/2+20);
+            drawBtn(p.width/2-130,p.height/2+60,110,40,"Explorar");
+            drawBtn(p.width/2+20,p.height/2+60,130,40,"Seguir historia");
+          }
+          if(mapMode==="story"){
+            p.drawingContext.shadowBlur=15; p.drawingContext.shadowColor='rgba(0,0,0,0.5)';
+            p.fill(COL_BG[0],COL_BG[1],COL_BG[2],240); p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2],100);
+            p.rect(20,p.height-160,p.width-40,140,16); p.drawingContext.shadowBlur=0;
+            p.fill(COL_TEXT[0],COL_TEXT[1],COL_TEXT[2]); p.noStroke();
+            p.textAlign(p.LEFT,p.TOP); p.textSize(15); p.textLeading(22);
+            p.text(stories[mapStep],40,p.height-140,p.width-80,120);
+            // Money display
+            p.fill(COL_BG[0],COL_BG[1],COL_BG[2],240); p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2],100); p.strokeWeight(1);
+            p.rect(20,20,250,45,12);
+            let mc, diffObj=money[mapStep]-currentMoney;
+            if(Math.abs(diffObj)>100000){mc=diffObj>0?p.color(COL_EMERALD[0],COL_EMERALD[1],COL_EMERALD[2]):p.color(COL_RED[0],COL_RED[1],COL_RED[2]);}
+            else{mc=p.color(COL_TEXT[0],COL_TEXT[1],COL_TEXT[2]);}
+            p.fill(mc); p.noStroke(); p.textSize(22); p.textStyle(p.BOLD); p.textAlign(p.LEFT,p.CENTER);
+            p.text("ðŸ’° $"+Math.round(currentMoney).toLocaleString("es-CO"),35,42); p.textStyle(p.NORMAL);
+            let btnT=(mapStep===casinos.length-1)?"Volver":"Siguiente";
+            drawBtn(p.width-130,p.height-60,100,40,btnT);
+          }
+          if(mapMode==="explore"){
+            p.drawingContext.shadowBlur=10; p.drawingContext.shadowColor='rgba(0,0,0,0.5)';
+            p.fill(COL_BG[0],COL_BG[1],COL_BG[2],240); p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2],100);
+            p.rect(20,p.height-80,p.width-40,60,12); p.drawingContext.shadowBlur=0;
+            p.fill(COL_TEXT[0],COL_TEXT[1],COL_TEXT[2]); p.noStroke(); p.textAlign(p.LEFT,p.CENTER); p.textSize(14);
+            p.text("Haz clic sobre un casino para investigarlo de cerca.",40,p.height-50);
+            drawBtn(p.width-110,p.height-70,90,40,"Volver");
+          }
+        }
+        function drawBtn(x,y,w,h,label) {
+          let hover=p.mouseX>x&&p.mouseX<x+w&&p.mouseY>y&&p.mouseY<y+h;
+          let cy=hover?y-2:y;
+          if(hover){p.drawingContext.shadowBlur=10;p.drawingContext.shadowColor='rgba(212,175,55,0.3)';}
+          p.fill(hover?p.color(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]):p.color(COL_BG[0],COL_BG[1],COL_BG[2]));
+          p.stroke(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]); p.strokeWeight(1); p.rect(x,cy,w,h,12);
+          p.drawingContext.shadowBlur=0;
+          p.fill(hover?p.color(COL_BG[0],COL_BG[1],COL_BG[2]):p.color(COL_GOLD[0],COL_GOLD[1],COL_GOLD[2]));
+          p.noStroke(); p.textSize(14); p.textStyle(p.BOLD); p.textAlign(p.CENTER,p.CENTER);
+          p.text(label,x+w/2,cy+h/2); p.textStyle(p.NORMAL);
+        }
+
+        // === MOUSE ===
+        p.mousePressed = function() {
+          if(!document.getElementById('screen-map').classList.contains('active')) return;
+          if(mapMode==="start"){
+            if(p.mouseX>p.width/2-130&&p.mouseX<p.width/2-20&&p.mouseY>p.height/2+60&&p.mouseY<p.height/2+100){mapMode="explore";targetZoom=1;targetX=0;targetY=0;}
+            if(p.mouseX>p.width/2+20&&p.mouseX<p.width/2+150&&p.mouseY>p.height/2+60&&p.mouseY<p.height/2+100){mapMode="story";mapStep=0;animProgress=1;currentMoney=0;hasExploded=false;}
+          } else if(mapMode==="story"){
+            if(animProgress===1){
+              let btnY=p.height-60;
+              if(p.mouseX>p.width-130&&p.mouseX<p.width-30&&p.mouseY>btnY-2&&p.mouseY<btnY+40){
+                if(mapStep<casinos.length-1){mapStep++;animProgress=0;hasExploded=false;}
+                else{mapMode="start";targetZoom=1;targetX=0;targetY=0;}
+              }
+            }
+          } else if(mapMode==="explore"){
+            if(p.mouseX>p.width-110&&p.mouseX<p.width-20&&p.mouseY>p.height-70&&p.mouseY<p.height-30){mapMode="start";targetZoom=1;targetX=0;targetY=0;return;}
+            let clicked=false, mx=(p.mouseX-camX)/camZoom, my=(p.mouseY-camY)/camZoom;
+            for(let ci=0;ci<casinos.length;ci++){let c=casinos[ci];if(p.dist(mx,my,c.x,c.y)<15){targetZoom=1.6;targetX=p.width/2-c.x*targetZoom;targetY=p.height/2-c.y*targetZoom;clicked=true;}}
+            if(!clicked&&p.mouseY<p.height-100){targetZoom=1;targetX=0;targetY=0;}
+          }
+        };
+      }; // end mapSketch
+
+      // Initialize only when DOM is ready
+      new p5(mapSketch, document.getElementById('p5-canvas-container'));
+    })();
+    </script>
+
+    <!-- Script for Three.js & UI Logic (Same as before) -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- Three.js Setup ---
+        const canvasContainer = document.getElementById('threeCanvas');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
+        camera.position.set(0, 150, 400);
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.localClippingEnabled = true;
+        canvasContainer.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xd4af37, 0.8);
+        dirLight.position.set(100, 200, 50);
+        scene.add(dirLight);
+        
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight2.position.set(-100, 100, -50);
+        scene.add(dirLight2);
+
+        function base64ToArrayBuffer(base64) {
+            const binary_string = window.atob(base64);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        let rouletteMeshes = [];
+        const clippingPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 200);
+        
+        let targetCameraPos = new THREE.Vector3(0, 150, 400);
+        let targetCameraLookAt = new THREE.Vector3(0, 0, 0);
+        let targetClippingConstant = 200; 
+        let targetOpacity = 1.0;
+        let isExploded = false;
+
+        // -- Variables de Raycasting y Selección --
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(-1000, -1000);
+        let hoveredMesh = null;
+        let selectedMesh = null;
+
+        window.addEventListener('mousemove', (event) => {
+            const rect = canvasContainer.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        });
+
+        window.addEventListener('click', () => {
+            if (hoveredMesh) {
+                selectedMesh = hoveredMesh;
+                
+                const pieceType = selectedMesh.userData.pieceType || "default";
+                const pieceName = selectedMesh.name || "";
+                
+                let data = pieceData[pieceType];
+                
+                if (!data || pieceType === "default") {
+                    let cleanName = pieceName.toLowerCase().includes("circ") ? "Estructura Base" : "Pieza: " + pieceName;
+                    data = { ...pieceData.default, title: cleanName };
+                }
+                
+                updateInfoCard(data);
+                
+            } else {
+                selectedMesh = null;
+            }
+        });
+
+        let ruletaModel = null;
+        let ruletaVidrioModel = null;
+
+        function processModel(object) {
+            const box = new THREE.Box3().setFromObject(object);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 200 / maxDim;
+            
+            object.scale.set(scale, scale, scale);
+            object.position.sub(center.multiplyScalar(scale));
+            
+            object.updateMatrixWorld(true);
+            
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    const lowerName = (child.name || "").toLowerCase();
+                    const isGlass = lowerName.includes("vidrio") || lowerName.includes("glass");
+
+                    // Preserve textures but configure for clipping and transparent overlays
+                    if (child.material) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach(mat => {
+                            mat.clippingPlanes = [clippingPlane];
+                            mat.side = THREE.DoubleSide;
+                            
+                            if (isGlass) {
+                                mat.transparent = true;
+                                mat.opacity = 0.25;
+                                mat.roughness = 0.05;
+                                mat.metalness = 0.9;
+                                mat.depthWrite = false;
+                            } else {
+                                mat.transparent = false;
+                                mat.opacity = 1.0;
+                                mat.depthWrite = true;
+                                // Boost metalness/roughness for beautiful premium shine
+                                if (mat.isMeshStandardMaterial || mat.type === 'MeshStandardMaterial') {
+                                    mat.roughness = Math.min(mat.roughness, 0.4);
+                                    mat.metalness = Math.max(mat.metalness, 0.55);
+                                }
+                            }
+                        });
+                    } else {
+                        // Fallback material
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: isGlass ? 0xffffff : 0x888888,
+                            metalness: isGlass ? 0.9 : 0.6,
+                            roughness: isGlass ? 0.05 : 0.3,
+                            clippingPlanes: [clippingPlane],
+                            side: THREE.DoubleSide,
+                            transparent: isGlass,
+                            opacity: isGlass ? 0.25 : 1.0,
+                            depthWrite: !isGlass
+                        });
+                    }
+
+                    child.userData.originalPosition = child.position.clone();
+                    
+                    const childBox = new THREE.Box3().setFromObject(child);
+                    const childCenter = childBox.getCenter(new THREE.Vector3());
+                    const childSize = childBox.getSize(new THREE.Vector3());
+                    
+                    // --- Clasificación automática para nombres genéricos como "circule" ---
+                    let pieceType = "default";
+                    if (isGlass) pieceType = "glass";
+                    else if (lowerName.includes("taza") || lowerName.includes("bowl") || lowerName.includes("base") || lowerName.includes("bottom")) pieceType = "bowl";
+                    else if (lowerName.includes("eje") || lowerName.includes("shaft") || lowerName.includes("cylinder")) pieceType = "shaft";
+                    else if (lowerName.includes("plato") || lowerName.includes("rotor") || lowerName.includes("separators") || lowerName.includes("torus")) pieceType = "separators";
+                    else {
+                        // Heurística espacial porque los modelos se escalan a 200 de ancho/largo
+                        if (childSize.x > 160) {
+                            if (childCenter.y > 10) pieceType = "glass";
+                            else pieceType = "bowl";
+                        } else if (childSize.x < 70) {
+                            pieceType = "shaft";
+                        } else {
+                            pieceType = "separators";
+                        }
+                    }
+                    child.userData.pieceType = pieceType;
+                    
+                    let dir = childCenter.clone();
+                    dir.y *= 1.5; // Ligero énfasis vertical
+                    if (dir.lengthSq() < 0.0001) dir.set(0, 1, 0);
+                    dir.normalize();
+                    
+                    // Distancia base de explosión
+                    let distWorld = 45;
+                    // Si la pieza está muy arriba (como el vidrio) o muy abajo, la separamos mucho más
+                    if (childCenter.y > 20) {
+                        distWorld += (childCenter.y - 20) * 2.5; 
+                    } else if (childCenter.y < -20) {
+                        distWorld += (Math.abs(childCenter.y) - 20) * 2.5;
+                    }
+                    
+                    const explosionDistLocal = distWorld / scale;
+                    child.userData.explodedPosition = child.position.clone().add(dir.multiplyScalar(explosionDistLocal));
+                    
+                    rouletteMeshes.push(child);
+                }
+            });
+            
+            scene.add(object);
+            return object;
+        }
+
+        try {
+            const loader = new FBXLoader();
+            
+            if (typeof ruletaFbxBase64 !== 'undefined') {
+                const arrayBuffer1 = base64ToArrayBuffer(ruletaFbxBase64);
+                ruletaModel = loader.parse(arrayBuffer1, '');
+                processModel(ruletaModel);
+                ruletaVidrioModel = ruletaModel;
+            }
+            
+            setTimeout(() => {
+                const ol = document.getElementById('loadingOverlay');
+                if(ol) { ol.style.opacity = '0'; setTimeout(() => ol.style.display = 'none', 500); }
+            }, 800);
+        } catch (e) {
+            console.error("Error al cargar FBX:", e);
+        }
+
+        window.addEventListener('resize', () => {
+            if (canvasContainer.clientWidth > 0 && document.getElementById('screen-3d').classList.contains('active')) {
+                camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            }
+        });
+
+        const overlaySvg = document.getElementById('infographicOverlay');
+        const overlayLabels = document.getElementById('infographicLabels');
+
+        function updateInfographic() {
+            if (!isExploded) {
+                overlaySvg.style.display = 'none';
+                overlayLabels.style.display = 'none';
+                return;
+            }
+
+            overlaySvg.style.display = 'block';
+            overlayLabels.style.display = 'block';
+
+            // Clear previous paths in SVG
+            const paths = overlaySvg.querySelectorAll('path');
+            paths.forEach(p => p.remove());
+
+            const rect = canvasContainer.getBoundingClientRect();
+
+            const parts = {
+                glass: { id: 'label-glass', mesh: null, offsetX: -190, offsetY: -50 },
+                separators: { id: 'label-separators', mesh: null, offsetX: 190, offsetY: -20 },
+                shaft: { id: 'label-shaft', mesh: null, offsetX: -190, offsetY: 40 },
+                bowl: { id: 'label-bowl', mesh: null, offsetX: 190, offsetY: 60 }
+            };
+
+            rouletteMeshes.forEach(mesh => {
+                const pt = mesh.userData.pieceType;
+                if (parts[pt] && !parts[pt].mesh && mesh.parent && mesh.parent.visible) {
+                    parts[pt].mesh = mesh;
+                }
+            });
+
+            Object.keys(parts).forEach(key => {
+                const p = parts[key];
+                const labelEl = document.getElementById(p.id);
+                if (!labelEl) return;
+
+                if (p.mesh) {
+                    labelEl.style.opacity = '1';
+                    labelEl.style.transform = 'translate(-50%, -50%) scale(1)';
+
+                    const worldPos = new THREE.Vector3();
+                    p.mesh.getWorldPosition(worldPos);
+                    worldPos.project(camera);
+
+                    const screenX = (worldPos.x * 0.5 + 0.5) * rect.width;
+                    const screenY = (-worldPos.y * 0.5 + 0.5) * rect.height;
+
+                    const labelX = screenX + p.offsetX;
+                    const labelY = screenY + p.offsetY;
+
+                    labelEl.style.left = `${labelX}px`;
+                    labelEl.style.top = `${labelY}px`;
+
+                    const startX = labelX + (p.offsetX > 0 ? -100 : 100);
+                    const startY = labelY;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${startX} ${startY} L ${screenX} ${screenY}`);
+                    path.setAttribute('stroke', '#D4AF37');
+                    path.setAttribute('stroke-width', '1.5');
+                    path.setAttribute('stroke-dasharray', '4 3');
+                    path.setAttribute('marker-end', 'url(#arrowGold)');
+                    path.setAttribute('fill', 'none');
+                    overlaySvg.appendChild(path);
+                } else {
+                    labelEl.style.opacity = '0';
+                    labelEl.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(document.getElementById('screen-3d').classList.contains('active')) {
+                controls.update();
+                
+                // Animación de cámara
+                camera.position.lerp(targetCameraPos, 0.05);
+                controls.target.lerp(targetCameraLookAt, 0.05);
+                
+                // Animación de plano de corte
+                clippingPlane.constant += (targetClippingConstant - clippingPlane.constant) * 0.1;
+                
+                // Lógica de Raycaster
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(scene, true);
+                // Filtrar solo las mallas visibles que pertenecen a nuestros modelos cargados
+                const validIntersects = intersects.filter(i => i.object.isMesh && rouletteMeshes.includes(i.object) && i.object.parent.visible);
+                
+                if (validIntersects.length > 0) {
+                    if (hoveredMesh !== validIntersects[0].object) {
+                        hoveredMesh = validIntersects[0].object;
+                        canvasContainer.style.cursor = 'pointer';
+                    }
+                } else {
+                    hoveredMesh = null;
+                    canvasContainer.style.cursor = 'default';
+                }
+                
+                // Animación de mallas
+                rouletteMeshes.forEach(mesh => {
+                    let currentTargetOpacity = targetOpacity;
+                    let targetEmissiveHex = 0x000000;
+                    
+                    if (mesh === selectedMesh) {
+                        targetEmissiveHex = 0x666600; // Dorado
+                        currentTargetOpacity = 1.0;
+                    } else if (mesh === hoveredMesh) {
+                        targetEmissiveHex = 0x333333; // Brillo sutil
+                        currentTargetOpacity = Math.max(0.8, targetOpacity);
+                    }
+                    
+                    // Suavizar emisivo
+                    const targetColor = new THREE.Color(targetEmissiveHex);
+                    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                    const isGlassMesh = mesh.userData.pieceType === 'glass';
+                    
+                    materials.forEach(mat => {
+                        if (mat) {
+                            if (mat.emissive) mat.emissive.lerp(targetColor, 0.1);
+                            
+                            if (isGlassMesh) {
+                                mat.transparent = true;
+                                mat.opacity = 0.25;
+                                mat.depthWrite = false;
+                            } else {
+                                mat.opacity += (currentTargetOpacity - mat.opacity) * 0.05;
+                                mat.transparent = mat.opacity < 0.99;
+                                mat.depthWrite = !mat.transparent;
+                            }
+                        }
+                    });
+
+                    const targetPos = isExploded ? mesh.userData.explodedPosition : mesh.userData.originalPosition;
+                    if (targetPos) {
+                        mesh.position.lerp(targetPos, 0.08);
+                    }
+                });
+
+                updateInfographic();
+                renderer.render(scene, camera);
+            }
+        }
+        animate();
+
+        // --- UI Logic ---
+        const pieceData = {
+            glass: { 
+                title: "Vidrio superior", sub: "Cobertura Protectora", summary: "Cubierta de policarbonato que sella la zona de giro y evita manipulación.", 
+                material: "Policarbonato", weight: "4.2 kg", function: "Protección y sellado.",
+                icon: "shield-check", dur: 95, fric: 15, prec: 80 
+            },
+            bowl: { 
+                title: "Taza Cóncava", sub: "Base Estructural", summary: "Estructura fija tallada que alberga el rotor y mantiene el equilibrio del sistema.", 
+                material: "Madera y aluminio", weight: "35.5 kg", function: "Estabilizar el conjunto.",
+                icon: "layers", dur: 90, fric: 40, prec: 95 
+            },
+            shaft: { 
+                title: "Eje y Rodamientos", sub: "Mecanismo de Giro", summary: "Pivote central con rodamientos cerámicos que gobierna el giro con fricción casi nula.", 
+                material: "Acero y cerámica", weight: "2.8 kg", function: "Rotación concéntrica.",
+                icon: "settings", dur: 98, fric: 5, prec: 99 
+            },
+            separators: { 
+                title: "Rotor y Separadores", sub: "Zona de Casillas", summary: "Sección móvil de aluminio que contiene los números y deflectores romboidales.", 
+                material: "Aluminio fundido", weight: "18.2 kg", function: "Controlar caída de bola.",
+                icon: "pie-chart", dur: 85, fric: 60, prec: 90 
+            },
+            default: {
+                title: "Componente", sub: "Pieza Estructural", summary: "Parte del ensamblaje principal de la ruleta.",
+                material: "Aleación estándar", weight: "-- kg", function: "Soporte estructural.",
+                icon: "box", dur: 50, fric: 50, prec: 50
+            }
+        };
+
+        function updateInfoCard(data) {
+            document.getElementById("infoTitle").textContent = data.title;
+            document.getElementById("infoSub").textContent = data.sub;
+            document.getElementById("infoSummary").textContent = data.summary;
+            document.getElementById("infoMaterial").textContent = data.material;
+            document.getElementById("infoWeight").textContent = data.weight;
+            document.getElementById("infoFunction").textContent = data.function;
+            
+            // Stats
+            document.getElementById("statDurability").style.width = data.dur + "%";
+            document.getElementById("statDurabilityVal").textContent = data.dur + "%";
+            
+            document.getElementById("statFriction").style.width = data.fric + "%";
+            document.getElementById("statFrictionVal").textContent = data.fric + "%";
+            
+            document.getElementById("statPrecision").style.width = data.prec + "%";
+            document.getElementById("statPrecisionVal").textContent = data.prec + "%";
+            
+            // Icon update
+            const iconEl = document.getElementById("infoIcon");
+            if(iconEl && window.lucide) {
+                const newIcon = document.createElement('i');
+                newIcon.setAttribute("data-lucide", data.icon);
+                newIcon.className = "info-card-icon";
+                newIcon.id = "infoIcon";
+                iconEl.parentNode.replaceChild(newIcon, iconEl);
+                lucide.createIcons({ attrs: { class: "info-card-icon" } });
+            }
+        }
+
+        const modeData = {
+            general: { label: "VISTA GENERAL 3D", defaultPiece: "glass" },
+            exploded: { label: "DESPIECE", defaultPiece: "bowl" },
+            section: { label: "CORTE TRANSVERSAL", defaultPiece: "shaft" },
+            transparency: { label: "TRANSPARENCIA", defaultPiece: "glass" },
+            zoom: { label: "DETALLE PISTA", defaultPiece: "separators" }
+        };
+
+        function setMode(mode) {
+            const config = modeData[mode];
+            document.getElementById("appFrame").className = `viewport-panel mode-${mode}`;
+            document.getElementById("stageTitle").textContent = config.label;
+            document.getElementById("modeChip").textContent = `STATUS: [${config.label}]`;
+            
+            const piece = pieceData[config.defaultPiece];
+            updateInfoCard(piece);
+
+            document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {
+                btn.classList.toggle("is-active", btn.dataset.mode === mode);
+            });
+            
+            if (mode === 'general') {
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+            }
+            
+            targetCameraPos.set(0, 150, 400);
+            targetCameraLookAt.set(0, 0, 0);
+            targetClippingConstant = 200;
+            targetOpacity = 1.0;
+            isExploded = false;
+
+            if (mode === 'general') {
+                // Settings default
+            } else if (mode === 'section') {
+                targetClippingConstant = 0; 
+            } else if (mode === 'exploded') {
+                isExploded = true;
+            } else if (mode === 'transparency') {
+                targetOpacity = 0.25;
+            } else if (mode === 'zoom') {
+                targetCameraPos.set(0, 80, 150);
+                targetCameraLookAt.set(0, -20, 50);
+            }
+            
+            if (ruletaModel) ruletaModel.visible = true;
+        }
+
+        document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {
+            btn.addEventListener("click", () => setMode(btn.dataset.mode));
+        });
+
+        setMode("general");
+    </script>
+    
+    <!-- Chart.js Library and Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configuración global para Chart.js
+            Chart.defaults.color = '#8e9590';
+            Chart.defaults.font.family = '"Space Mono", monospace';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+            // --- ESTADOS DE LA LÍNEA DE TIEMPO ---
+            const timelineData = [
+                {
+                    timeStr: "20:00 - Expectativas Claras",
+                    scatter: [
+                        { x: 3, y: 150000, name: "Rojo/Negro" },
+                        { x: 5, y: 50000, name: "Sectores" },
+                        { x: 7, y: 0, name: "Martingala" },
+                        { x: 9, y: -20000, name: "Impulsivas" }
+                    ],
+                    line: [4000000, 4500000, 4200000, 4600000, 5000000],
+                    donut: [100, 0, 0, 0], // Todo negocio familiar
+                    bar: [50000, 150000, 0, -20000]
+                },
+                {
+                    timeStr: "22:00 - Estrategia Base",
+                    scatter: [
+                        { x: 3, y: 300000, name: "Rojo/Negro" },
+                        { x: 5, y: 800000, name: "Sectores" },
+                        { x: 7, y: 100000, name: "Martingala" },
+                        { x: 9, y: -50000, name: "Impulsivas" }
+                    ],
+                    line: [4000000, 6000000, 7500000, 9000000, 10000000],
+                    donut: [70, 0, 0, 30],
+                    bar: [800000, 300000, 100000, -50000]
+                },
+                {
+                    timeStr: "00:00 - La Racha de Oro",
+                    scatter: [
+                        { x: 3, y: 500000, name: "Rojo/Negro" },
+                        { x: 5, y: 1500000, name: "Sectores" },
+                        { x: 7, y: -200000, name: "Martingala" },
+                        { x: 9, y: -100000, name: "Impulsivas" }
+                    ],
+                    line: [4000000, 10000000, 15000000, 18000000, 22000000],
+                    donut: [45, 16, 7, 32],
+                    bar: [1500000, 500000, -200000, -100000]
+                },
+                {
+                    timeStr: "02:00 - Avaricia y Descontrol",
+                    scatter: [
+                        { x: 3, y: 100000, name: "Rojo/Negro" },
+                        { x: 5, y: 500000, name: "Sectores" },
+                        { x: 7, y: -800000, name: "Martingala" },
+                        { x: 9, y: -2000000, name: "Impulsivas" }
+                    ],
+                    line: [22000000, 18000000, 14000000, 11000000, 8000000],
+                    donut: [60, 20, 5, 15],
+                    bar: [500000, 100000, -800000, -2000000]
+                },
+                {
+                    timeStr: "04:00 - El Abismo",
+                    scatter: [
+                        { x: 3, y: -500000, name: "Rojo/Negro" },
+                        { x: 5, y: -1000000, name: "Sectores" },
+                        { x: 7, y: -2500000, name: "Martingala" },
+                        { x: 9, y: -4000000, name: "Impulsivas" }
+                    ],
+                    line: [8000000, 5000000, 2000000, 500000, 0],
+                    donut: [95, 5, 0, 0],
+                    bar: [-1000000, -500000, -2500000, -4000000]
+                }
+            ];
+
+            let globalChartScatter, globalChartLine, globalChartDonut, globalChartBar;
+            const initialData = timelineData[0];
+
+            // 1. Gráfico Exploratorio (Dispersión)
+            const ctxScatter = document.getElementById('chartScatter').getContext('2d');
+            globalChartScatter = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Estrategias',
+                        data: initialData.scatter,
+                        backgroundColor: '#D4AF37', // Dorado
+                        pointRadius: 8,
+                        pointHoverRadius: 11,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const raw = ctx.raw;
+                                    return `${raw.name}: $${raw.y.toLocaleString()} (Riesgo: ${raw.x})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Nivel de Riesgo (1-10)' }, min: 2, max: 10 },
+                        y: { title: { display: true, text: 'Ganancia promedio ($)' }, min: -4500000, max: 2000000 }
+                    }
+                }
+            });
+
+            // 2. Gráfico de Línea (Evolución)
+            const ctxLine = document.getElementById('chartLine').getContext('2d');
+            globalChartLine = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: ["T1", "T2", "T3", "T4", "T5"],
+                    datasets: [{
+                        label: 'Dinero total',
+                        data: initialData.line,
+                        borderColor: '#D4AF37', // Dorado
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0A4A2F'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            min: 0, max: 25000000,
+                            ticks: { callback: (val) => '$' + (val/1000000) + 'M' }
+                        }
+                    }
+                }
+            });
+
+            // 3. Gráfico de Dona (Origen del dinero)
+            const ctxDonut = document.getElementById('chartDonut').getContext('2d');
+            globalChartDonut = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ["Negocio familiar", "Reinversión", "Ganancias previas", "Ganancia inicial"],
+                    datasets: [{
+                        data: initialData.donut,
+                        backgroundColor: [
+                            '#0A4A2F', // Emerald
+                            '#D4AF37', // Gold
+                            '#B71C1C', // Red
+                            '#8e9590'  // Muted
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#111'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#ebe8d9', font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // 4. Gráfico de Barras (Rendimiento)
+            const ctxBar = document.getElementById('chartBar').getContext('2d');
+            globalChartBar = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ["Sectores", "Rojo/Negro", "Martingala", "Impulsivas"],
+                    datasets: [{
+                        label: 'Ganancia/Pérdida ($)',
+                        data: initialData.bar,
+                        backgroundColor: initialData.bar.map(v => v < 0 ? '#B71C1C' : '#0A4A2F'),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            min: -4500000, max: 2000000,
+                            ticks: { callback: (val) => '$' + (val/1000).toLocaleString() + 'k' }
+                        }
+                    }
+                }
+            });
+            
+            // --- LÓGICA DEL SLIDER / HUD ---
+            const timeSlider = document.getElementById('timeSlider');
+            const timeDisplay = document.getElementById('timeline-time-display');
+
+            timeSlider.addEventListener('input', (e) => {
+                const index = parseInt(e.target.value);
+                const snapshot = timelineData[index];
+                
+                timeDisplay.textContent = snapshot.timeStr;
+                
+                // HUD Effects on display
+                if (index >= 3) { // Pérdidas
+                    timeDisplay.style.color = 'var(--red)';
+                    timeDisplay.style.borderColor = 'var(--red)';
+                    timeDisplay.style.boxShadow = '0 0 10px rgba(183, 28, 28, 0.5)';
+                } else if (index === 2) { // Pico
+                    timeDisplay.style.color = 'var(--gold)';
+                    timeDisplay.style.borderColor = 'var(--gold)';
+                    timeDisplay.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.5)';
+                } else { // Inicio
+                    timeDisplay.style.color = 'var(--emerald)';
+                    timeDisplay.style.borderColor = 'var(--emerald)';
+                    timeDisplay.style.boxShadow = '0 0 10px rgba(10, 74, 47, 0.5)';
+                }
+
+                // Update charts data
+                globalChartScatter.data.datasets[0].data = snapshot.scatter;
+                globalChartScatter.update();
+
+                globalChartLine.data.datasets[0].data = snapshot.line;
+                globalChartLine.update();
+
+                globalChartDonut.data.datasets[0].data = snapshot.donut;
+                globalChartDonut.update();
+
+                globalChartBar.data.datasets[0].data = snapshot.bar;
+                globalChartBar.data.datasets[0].backgroundColor = snapshot.bar.map(v => {
+                    if (v < 0) return '#B71C1C';
+                    if (v > 1000000) return '#D4AF37';
+                    return '#0A4A2F';
+                });
+                globalChartBar.update();
+            });
+
+            // Forzar renderizado si la ventana cambia de tamaño
+            window.addEventListener('resize', () => {
+                Chart.instances.forEach(chart => chart.resize());
+            });
+        });
+    </script>
+</body>
+</html>

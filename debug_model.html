@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Model Debug</title>
+    <style>
+        body { margin: 0; background: #111; color: #fff; font-family: monospace; }
+        #canvas { width: 100vw; height: 70vh; display: block; }
+        #log { padding: 10px; max-height: 30vh; overflow-y: auto; font-size: 12px; background: #000; }
+        .ok { color: #2ecc71; }
+        .warn { color: #f39c12; }
+        .err { color: #e74c3c; }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="canvas"></div>
+    <div id="log"><h3>🔍 Model Diagnostic Log</h3></div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const logEl = document.getElementById('log');
+        function log(msg, cls = '') {
+            const p = document.createElement('div');
+            p.className = cls;
+            p.textContent = msg;
+            logEl.appendChild(p);
+            console.log(msg);
+        }
+
+        const container = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x222222);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 10000);
+        camera.position.set(0, 200, 500);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+        const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+        dir.position.set(100, 200, 100);
+        scene.add(dir);
+        const dir2 = new THREE.DirectionalLight(0xffffff, 0.8);
+        dir2.position.set(-100, 100, -100);
+        scene.add(dir2);
+
+        // Grid helper
+        scene.add(new THREE.GridHelper(500, 50, 0x444444, 0x333333));
+
+        function analyzeObject(obj, label) {
+            log(`\n=== ${label} ===`, 'ok');
+            
+            const box = new THREE.Box3().setFromObject(obj);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            
+            log(`BoundingBox size: x=${size.x.toFixed(2)}, y=${size.y.toFixed(2)}, z=${size.z.toFixed(2)}`);
+            log(`BoundingBox center: x=${center.x.toFixed(2)}, y=${center.y.toFixed(2)}, z=${center.z.toFixed(2)}`);
+            log(`Is empty (size 0)? ${size.x === 0 && size.y === 0 && size.z === 0}`, size.x === 0 ? 'err' : 'ok');
+            
+            let meshCount = 0, vertexCount = 0, materialCount = 0;
+            const materialNames = new Set();
+            const meshNames = [];
+            let hasTextures = false;
+            
+            obj.traverse((child) => {
+                if (child.isMesh) {
+                    meshCount++;
+                    meshNames.push(child.name || '(unnamed)');
+                    if (child.geometry) {
+                        vertexCount += child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
+                    }
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    mats.forEach(mat => {
+                        if (mat) {
+                            materialCount++;
+                            materialNames.add(mat.name || mat.type);
+                            if (mat.map) hasTextures = true;
+                            if (mat.normalMap) hasTextures = true;
+                            if (mat.roughnessMap) hasTextures = true;
+                            if (mat.metalnessMap) hasTextures = true;
+                        }
+                    });
+                }
+            });
+            
+            log(`Meshes found: ${meshCount}`, meshCount > 0 ? 'ok' : 'err');
+            log(`Total vertices: ${vertexCount.toLocaleString()}`);
+            log(`Materials: ${materialCount} (unique types: ${[...materialNames].join(', ')})`);
+            log(`Has textures: ${hasTextures}`, hasTextures ? 'ok' : 'warn');
+            log(`Mesh names: ${meshNames.join(', ')}`);
+            
+            // Auto-fit camera
+            if (size.x > 0) {
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 1.8;
+                
+                camera.position.set(center.x, center.y + maxDim * 0.3, center.z + cameraZ);
+                controls.target.copy(center);
+                controls.update();
+                
+                log(`Camera auto-fitted to distance: ${cameraZ.toFixed(2)}`, 'ok');
+            }
+        }
+
+        // Try loading new GLB
+        log('Attempting to load rueltaTexturas.glb...');
+        const gltfLoader = new GLTFLoader();
+        gltfLoader.load('rueltaTexturas.glb', 
+            (gltf) => {
+                log('✅ GLB loaded successfully!', 'ok');
+                log(`Scenes: ${gltf.scenes ? gltf.scenes.length : 0}`);
+                log(`Animations: ${gltf.animations ? gltf.animations.length : 0}`);
+                
+                const model = gltf.scene;
+                scene.add(model);
+                analyzeObject(model, 'rueltaTexturas.glb');
+            },
+            (progress) => {
+                if (progress.total) {
+                    const pct = ((progress.loaded / progress.total) * 100).toFixed(1);
+                    log(`Loading GLB: ${pct}%`);
+                }
+            },
+            (error) => {
+                log(`❌ GLB load error: ${error.message || error}`, 'err');
+            }
+        );
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    </script>
+</body>
+</html>

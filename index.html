@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspección 3D | Ingeniería de la Suerte</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        body {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* --- GLOBAL NAVIGATION --- */
+        .global-nav {
+            flex-shrink: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+        }
+
+        /* --- CONTENT WRAPPER --- */
+        #main-content {
+            flex: 1;
+            min-height: 0; /* Critical: prevents flex children from stretching */
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 24px;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+
+        .viewport-panel {
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+
+        .nav-tab {
+            text-decoration: none;
+        }
+
+        /* --- INFOGRAPHIC BUBBLES --- */
+        .info-bubble {
+            position: absolute;
+            background: rgba(17, 17, 17, 0.92);
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #ebe8d9;
+            width: 200px;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 10px rgba(212, 175, 55, 0.15);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            z-index: 30;
+        }
+        .info-bubble:hover {
+            border-color: #D4AF37;
+            box-shadow: 0 4px 25px rgba(212, 175, 55, 0.35);
+        }
+        .bubble-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .bubble-tag {
+            font-family: "Space Mono", monospace;
+            font-size: 0.6rem;
+            color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 4px;
+            padding: 2px 6px;
+            letter-spacing: 0.05em;
+        }
+        .info-bubble h4 {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #ebe8d9;
+        }
+        .info-bubble p {
+            margin: 4px 0 0;
+            color: #a4aaa5;
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL NAVIGATION -->
+    <nav class="global-nav">
+        <a href="index.html" class="nav-tab active">INSPECCIÓN 3D</a>
+        <a href="datos.html" class="nav-tab">ANÁLISIS DE DATOS</a>
+        <a href="mapa.html" class="nav-tab">MAPA INTERACTIVO</a>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div id="main-content">
+        <div class="app-shell">
+            <section class="viewport-panel mode-general" id="appFrame">
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                    <div class="technical-text" style="color: var(--gold)">CARGANDO TELEMETRÍA 3D...</div>
+                </div>
+                
+                <header class="topbar">
+                    <h1>Ingeniería de la Suerte</h1>
+                    <div class="status-chip" id="modeChip">STATUS: [VISTA GENERAL]</div>
+                </header>
+
+
+                <section class="visual-stage">
+                    <div class="visual-header">
+                        <h2>Inspección de Sistema</h2>
+                        <div class="visual-mode" id="stageTitle">VISTA GENERAL 3D</div>
+                    </div>
+
+                    <div class="stage-wrap">
+                        <div class="stage-canvas" style="position: relative;">
+                            <!-- WebGL interactive canvas -->
+                            <div id="threeCanvas" style="position: absolute; inset: 0; z-index: 5; transition: opacity 0.5s ease; opacity: 0;"></div>
+                            
+                            <!-- Offline Drag & Drop CORS Bypasser overlay -->
+                            <div id="glbUploadOverlay" style="position: absolute; inset: 20px; border: 2px dashed rgba(212, 175, 55, 0.4); border-radius: 12px; background: rgba(17, 17, 17, 0.93); display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; z-index: 15; backdrop-filter: blur(10px); transition: all 0.3s ease; pointer-events: auto;">
+                                <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: var(--gold); margin-bottom: 12px;"></i>
+                                <h3 style="color: #fff; margin: 0 0 8px; font-weight: 600; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.05em;">Cargar Modelo Local GLB</h3>
+                                <p style="color: var(--muted); font-size: 0.8rem; line-height: 1.5; margin: 0 0 16px; max-width: 280px;">Para interactuar en 3D offline, por favor arrastra el archivo <strong>ruleta final.fbx</strong> o <strong>rueltaTexturas.glb</strong> aquí o haz clic abajo.</p>
+                                <button class="mode-btn" id="btnSelectGlb" style="border-color: var(--gold); color: #fff; background: rgba(212,175,55,0.1);">Seleccionar Archivo</button>
+                            </div>
+
+                            <!-- Infographic SVG Overlay -->
+                            <svg id="infographicOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 25; width: 100%; height: 100%; display: none;">
+                                <defs>
+                                    <marker id="arrowGold" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#D4AF37" />
+                                    </marker>
+                                </defs>
+                            </svg>
+
+                            <!-- Floating Infographic Labels -->
+                            <div id="infographicLabels" style="position: absolute; inset: 0; pointer-events: none; z-index: 26; display: none;">
+                                <div id="label-glass" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">PROTECCIÓN</span>
+                                        <h4>Cúpula de Vidrio</h4>
+                                    </div>
+                                    <p>Cúpula transparente de policarbonato termoconformado. Sella y protege la pista de giro.</p>
+                                </div>
+                                <div id="label-separators" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">ROTOR</span>
+                                        <h4>Plato y Casillas</h4>
+                                    </div>
+                                    <p>Aluminio calibrado con deflectores romboidales para aleatoriedad óptima de la bola.</p>
+                                </div>
+                                <div id="label-shaft" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">MECANISMO</span>
+                                        <h4>Eje de Rotación</h4>
+                                    </div>
+                                    <p>Pivot cerámico de ultra-baja fricción para giros prolongados y precisos.</p>
+                                </div>
+                                <div id="label-bowl" class="info-bubble">
+                                    <div class="bubble-header">
+                                        <span class="bubble-tag">BASE</span>
+                                        <h4>Taza Cóncava</h4>
+                                    </div>
+                                    <p>Madera maciza pulida y chasis pesado amortiguador de vibraciones externas.</p>
+                                </div>
+                            </div>
+
+                            <!-- Pre-rendered textured screenshots fallback (always visible before GLB load) -->
+                            <img src="imagenes pantallas/pantalla principal.png" class="placeholder-image img-general is-active" alt="Vista General" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/corte.png" class="placeholder-image img-section" alt="Corte Transversal" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/despiece.png" class="placeholder-image img-exploded" alt="Despiece" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/transparencia.png" class="placeholder-image img-transparency" alt="Transparencia" onerror="this.src='Imagen explicativa.png';">
+                            <img src="imagenes pantallas/zoom.png" class="placeholder-image img-zoom" alt="Zoom" onerror="this.src='Imagen explicativa.png';">
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <aside class="side-panel">
+                <div>
+                    <h2>Panel de Control HUD</h2>
+                    <p class="panel-subtitle">> Seleccione un modo para aislar sistemas estructurales.</p>
+                </div>
+
+                <div class="control-list">
+                    <button class="control-mode-btn is-active" data-mode="general">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span class="technical-text">MODO: GENERAL 3D</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="section">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span class="technical-text">MODO: CORTE</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="exploded">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="3"></rect><rect x="5" y="10.5" width="14" height="3"></rect><rect x="5" y="17" width="14" height="3"></rect></svg>
+                        <span class="technical-text">MODO: DESPIECE</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="transparency">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="6" width="8" height="12"></rect><rect x="12" y="6" width="8" height="12" opacity="0.5"></rect></svg>
+                        <span class="technical-text">MODO: TRANSPARENCIA</span>
+                    </button>
+                    <button class="control-mode-btn" data-mode="zoom">
+                        <svg class="control-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+                        <span class="technical-text">MODO: DETALLE</span>
+                    </button>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i data-lucide="shield-check" class="info-card-icon" id="infoIcon"></i>
+                        <div class="info-card-title-group">
+                            <h3 id="infoTitle">Vidrio superior</h3>
+                            <span id="infoSub">Cobertura Protectora</span>
+                        </div>
+                    </div>
+                    
+                    <p class="info-card-desc" id="infoSummary">Cubierta de policarbonato que protege la trayectoria de la bola.</p>
+                    
+                    <dl class="info-card-specs">
+                        <div class="spec-item">
+                            <dt><i data-lucide="box"></i> Material</dt>
+                            <dd id="infoMaterial">Policarbonato</dd>
+                        </div>
+                        <div class="spec-item">
+                            <dt><i data-lucide="weight"></i> Masa</dt>
+                            <dd id="infoWeight">4.2 kg</dd>
+                        </div>
+                        <div class="spec-item full-width">
+                            <dt><i data-lucide="cpu"></i> Función Técnica</dt>
+                            <dd id="infoFunction">Sellar la parte superior de la ruleta.</dd>
+                        </div>
+                    </dl>
+
+                    <div class="info-card-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Durabilidad</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill emerald" id="statDurability" style="width: 95%"></div></div>
+                            <span class="stat-value" id="statDurabilityVal">95%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Fricción</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill red" id="statFriction" style="width: 15%"></div></div>
+                            <span class="stat-value" id="statFrictionVal">15%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Precisión</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill gold" id="statPrecision" style="width: 80%"></div></div>
+                            <span class="stat-value" id="statPrecisionVal">80%</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Initialize Lucide icons on start -->
+    <script>
+        if(window.lucide) {
+            lucide.createIcons();
+        }
+    </script>
+
+    <!-- SCREEN 1 MODULE: 3D RULETA GLB VIEWER -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const canvasContainer = document.getElementById('threeCanvas');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
+        camera.position.set(0, 150, 400);
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.localClippingEnabled = true;
+        canvasContainer.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xd4af37, 0.85);
+        dirLight.position.set(100, 200, 50);
+        scene.add(dirLight);
+        
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.45);
+        dirLight2.position.set(-100, 100, -50);
+        scene.add(dirLight2);
+
+        let rouletteMeshes = [];
+        const clippingPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 200);
+        
+        let targetCameraPos = new THREE.Vector3(0, 150, 400);
+        let targetCameraLookAt = new THREE.Vector3(0, 0, 0);
+        let targetClippingConstant = 200; 
+        let targetOpacity = 1.0;
+        let isExploded = false;
+        let currentMode = "general";
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(-1000, -1000);
+        let hoveredMesh = null;
+        let selectedMesh = null;
+
+        window.addEventListener('mousemove', (event) => {
+            const rect = canvasContainer.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        });
+
+        window.addEventListener('click', () => {
+            if (hoveredMesh) {
+                selectedMesh = hoveredMesh;
+                const pieceType = selectedMesh.userData.pieceType || "default";
+                const pieceName = selectedMesh.name || "";
+                let data = pieceData[pieceType];
+                if (!data || pieceType === "default") {
+                    let cleanName = pieceName.toLowerCase().includes("circ") ? "Estructura Base" : "Pieza: " + pieceName;
+                    data = { ...pieceData.default, title: cleanName };
+                }
+                updateInfoCard(data);
+            } else {
+                selectedMesh = null;
+            }
+        });
+
+        let ruletaModel = null;
+
+        function processGLBModel(gltfScene) {
+            if (ruletaModel) {
+                scene.remove(ruletaModel);
+            }
+            ruletaModel = gltfScene;
+            
+            // Compute the bounding box of meshes only, ignoring far-away camera/light nodes
+            let meshBox = new THREE.Box3();
+            let hasMesh = false;
+            ruletaModel.traverse((child) => {
+                if (child.isMesh) {
+                    if (!hasMesh) {
+                        meshBox.setFromObject(child);
+                        hasMesh = true;
+                    } else {
+                        meshBox.expandByObject(child);
+                    }
+                }
+            });
+
+            if (!hasMesh) {
+                meshBox.setFromObject(ruletaModel);
+            }
+
+            const size = meshBox.getSize(new THREE.Vector3());
+            const center = meshBox.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            // We use target max dimension of 260 to make the roulette scale larger and fill the screen beautifully
+            const scale = 260 / maxDim;
+            
+            ruletaModel.scale.set(scale, scale, scale);
+            
+            // Center the model perfectly around the origin (0, 0, 0)
+            ruletaModel.position.copy(center).multiplyScalar(-scale);
+            
+            ruletaModel.updateMatrixWorld(true);
+            
+            rouletteMeshes = [];
+            
+            ruletaModel.traverse((child) => {
+                if (child.isMesh) {
+                    const lowerName = (child.name || "").toLowerCase();
+                    // Collect all material names for this mesh
+                    const matNames = [];
+                    if (child.material) {
+                        const mats = Array.isArray(child.material) ? child.material : [child.material];
+                        mats.forEach(m => matNames.push((m.name || '').toLowerCase()));
+                    }
+                    const allNames = lowerName + ' ' + matNames.join(' ');
+                    
+                    const isGlass = allNames.includes("vidrio") || allNames.includes("glass") || allNames.includes("cupula") || allNames.includes("dome");
+
+                    if (child.material) {
+                        const materials = Array.isArray(child.material) ? child.material : [child.material];
+                        materials.forEach(mat => {
+                            mat.clippingPlanes = [clippingPlane];
+                            mat.side = THREE.DoubleSide;
+                            
+                            if (isGlass) {
+                                mat.transparent = true;
+                                mat.opacity = 0.25;
+                                mat.roughness = 0.05;
+                                mat.metalness = 0.9;
+                                mat.depthWrite = false;
+                            } else {
+                                // Preserve original textures from the model
+                                mat.transparent = false;
+                                mat.opacity = 1.0;
+                                mat.depthWrite = true;
+                            }
+                        });
+                    } else {
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: isGlass ? 0xffffff : 0x888888,
+                            metalness: isGlass ? 0.9 : 0.6,
+                            roughness: isGlass ? 0.05 : 0.3,
+                            clippingPlanes: [clippingPlane],
+                            side: THREE.DoubleSide,
+                            transparent: isGlass,
+                            opacity: isGlass ? 0.25 : 1.0,
+                            depthWrite: !isGlass
+                        });
+                    }
+
+                    child.userData.originalPosition = child.position.clone();
+                    
+                    const childBox = new THREE.Box3().setFromObject(child);
+                    const childCenter = childBox.getCenter(new THREE.Vector3());
+                    const childSize = childBox.getSize(new THREE.Vector3());
+                    
+                    // Classify piece using material names + mesh names
+                    let pieceType = "default";
+                    if (isGlass) {
+                        pieceType = "glass";
+                    } else if (allNames.includes("base") || allNames.includes("taza") || allNames.includes("bowl") || allNames.includes("bottom") || allNames.includes("wood")) {
+                        pieceType = "bowl";
+                    } else if (allNames.includes("tubos") || allNames.includes("eje") || allNames.includes("shaft") || allNames.includes("cylinder") || allNames.includes("torre") || allNames.includes("cosa metal")) {
+                        pieceType = "shaft";
+                    } else if (allNames.includes("separador") || allNames.includes("numeros") || allNames.includes("ruleta") || allNames.includes("plato") || allNames.includes("rotor") || allNames.includes("casillas") || allNames.includes("00")) {
+                        pieceType = "separators";
+                    } else {
+                        // Fallback by geometry size
+                        const maxMeshDim = Math.max(childSize.x, childSize.z);
+                        if (maxMeshDim > 160) {
+                            if (childCenter.y > 10) pieceType = "glass";
+                            else pieceType = "bowl";
+                        } else if (maxMeshDim < 70) {
+                            pieceType = "shaft";
+                        } else {
+                            pieceType = "separators";
+                        }
+                    }
+                    child.userData.pieceType = pieceType;
+                    console.log(`Mesh: ${child.name}, Materials: [${matNames}], PieceType: ${pieceType}, Size: ${childSize.x.toFixed(1)}x${childSize.y.toFixed(1)}x${childSize.z.toFixed(1)}`);
+                    
+                    let dir = childCenter.clone();
+                    dir.y *= 1.5; 
+                    if (dir.lengthSq() < 0.0001) dir.set(0, 1, 0);
+                    dir.normalize();
+                    
+                    let distWorld = 35;
+                    if (childCenter.y > 20) {
+                        distWorld += (childCenter.y - 20) * 1.8; 
+                    } else if (childCenter.y < -20) {
+                        distWorld += (Math.abs(childCenter.y) - 20) * 1.8;
+                    }
+                    
+                    const explosionDistLocal = distWorld / scale;
+                    child.userData.explodedPosition = child.position.clone().add(dir.multiplyScalar(explosionDistLocal));
+                    
+                    rouletteMeshes.push(child);
+                }
+            });
+            
+            scene.add(ruletaModel);
+            
+            // UI Switch: Reveal 3D viewport, Hide static screenshots
+            document.getElementById('glbUploadOverlay').style.display = 'none';
+            document.getElementById('threeCanvas').style.opacity = '1';
+            document.querySelectorAll('.placeholder-image').forEach(img => {
+                img.style.opacity = '0';
+                img.classList.remove('is-active');
+            });
+            
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+        }
+
+        // Automated local/CORS load attempt
+        try {
+            const loader = new GLTFLoader();
+            loader.load('rueltaTexturas.glb', (gltf) => {
+                processGLBModel(gltf.scene);
+                setTimeout(() => {
+                    const ol = document.getElementById('loadingOverlay');
+                    if(ol) { ol.style.opacity = '0'; setTimeout(() => ol.style.display = 'none', 500); }
+                }, 800);
+            }, undefined, (error) => {
+                console.warn("Carga automatica de rueltaTexturas.glb bloqueada o CORS. Habilitando Dropzone...");
+                
+                // Show offline drop overlay
+                document.getElementById('glbUploadOverlay').style.display = 'flex';
+                document.getElementById('threeCanvas').style.opacity = '0';
+                
+                // Active corresponding visual screenshot fallback
+                setMode(currentMode);
+                
+                setTimeout(() => {
+                    const ol = document.getElementById('loadingOverlay');
+                    if(ol) { ol.style.opacity = '0'; setTimeout(() => ol.style.display = 'none', 500); }
+                }, 800);
+            });
+        } catch (e) {
+            console.error("Error al iniciar GLTFLoader:", e);
+        }
+
+        // --- Drag & Drop / File Select CORS bypass logic ---
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.glb';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+
+        document.getElementById('btnSelectGlb').addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadGLBFromFile(file);
+            }
+        });
+
+        const dropZone = document.querySelector('.stage-wrap');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            document.getElementById('glbUploadOverlay').style.borderColor = 'var(--gold)';
+            document.getElementById('glbUploadOverlay').style.boxShadow = '0 0 15px rgba(212, 175, 55, 0.3)';
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            document.getElementById('glbUploadOverlay').style.borderColor = 'rgba(212, 175, 55, 0.4)';
+            document.getElementById('glbUploadOverlay').style.boxShadow = 'none';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.glb')) {
+                loadGLBFromFile(file);
+            }
+        });
+
+        function loadGLBFromFile(file) {
+            const ol = document.getElementById('loadingOverlay');
+            if (ol) {
+                ol.style.display = 'flex';
+                ol.style.opacity = '1';
+                ol.querySelector('.technical-text').textContent = 'PROCESANDO MODELO GLB...';
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const contents = event.target.result;
+                const loader = new GLTFLoader();
+                loader.parse(contents, '', (gltf) => {
+                    processGLBModel(gltf.scene);
+                    setTimeout(() => {
+                        if (ol) { ol.style.opacity = '0'; setTimeout(() => ol.style.display = 'none', 500); }
+                    }, 800);
+                }, (error) => {
+                    console.error("Error al decodificar GLB:", error);
+                    alert("Error al procesar el archivo GLB. Verifica el formato.");
+                    if (ol) { ol.style.opacity = '0'; setTimeout(() => ol.style.display = 'none', 500); }
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        window.addEventListener('resize', () => {
+            if (canvasContainer.clientWidth > 0) {
+                camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            }
+        });
+
+        const overlaySvg = document.getElementById('infographicOverlay');
+        const overlayLabels = document.getElementById('infographicLabels');
+
+        function updateInfographic() {
+            if (!isExploded) {
+                overlaySvg.style.display = 'none';
+                overlayLabels.style.display = 'none';
+                return;
+            }
+
+            overlaySvg.style.display = 'block';
+            overlayLabels.style.display = 'block';
+
+            // Clear previous paths
+            const paths = overlaySvg.querySelectorAll('path');
+            paths.forEach(p => p.remove());
+
+            const rect = canvasContainer.getBoundingClientRect();
+
+            const parts = {
+                glass: { id: 'label-glass', mesh: null, offsetX: -190, offsetY: -110 },
+                separators: { id: 'label-separators', mesh: null, offsetX: 190, offsetY: -40 },
+                shaft: { id: 'label-shaft', mesh: null, offsetX: -190, offsetY: 100 },
+                bowl: { id: 'label-bowl', mesh: null, offsetX: 190, offsetY: 110 }
+            };
+
+            rouletteMeshes.forEach(mesh => {
+                const pt = mesh.userData.pieceType;
+                if (parts[pt] && !parts[pt].mesh && mesh.parent && mesh.parent.visible) {
+                    parts[pt].mesh = mesh;
+                }
+            });
+
+            Object.keys(parts).forEach(key => {
+                const p = parts[key];
+                const labelEl = document.getElementById(p.id);
+                if (!labelEl) return;
+
+                if (p.mesh) {
+                    labelEl.style.opacity = '1';
+                    labelEl.style.transform = 'translate(-50%, -50%) scale(1)';
+
+                    const worldPos = new THREE.Vector3();
+                    p.mesh.getWorldPosition(worldPos);
+                    worldPos.project(camera);
+
+                    const screenX = (worldPos.x * 0.5 + 0.5) * rect.width;
+                    const screenY = (-worldPos.y * 0.5 + 0.5) * rect.height;
+
+                    const labelX = screenX + p.offsetX;
+                    const labelY = screenY + p.offsetY;
+
+                    labelEl.style.left = `${labelX}px`;
+                    labelEl.style.top = `${labelY}px`;
+
+                    const startX = labelX + (p.offsetX > 0 ? -100 : 100);
+                    const startY = labelY;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${startX} ${startY} L ${screenX} ${startY} L ${screenX} ${screenY}`);
+                    path.setAttribute('stroke', '#D4AF37');
+                    path.setAttribute('stroke-width', '1.5');
+                    path.setAttribute('stroke-dasharray', '4 3');
+                    path.setAttribute('marker-end', 'url(#arrowGold)');
+                    path.setAttribute('fill', 'none');
+                    overlaySvg.appendChild(path);
+                } else {
+                    labelEl.style.opacity = '0';
+                    labelEl.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(true) {
+                controls.update();
+                
+                camera.position.lerp(targetCameraPos, 0.05);
+                controls.target.lerp(targetCameraLookAt, 0.05);
+                clippingPlane.constant += (targetClippingConstant - clippingPlane.constant) * 0.1;
+                
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(scene, true);
+                const validIntersects = intersects.filter(i => i.object.isMesh && rouletteMeshes.includes(i.object) && i.object.parent.visible);
+                
+                if (validIntersects.length > 0) {
+                    if (hoveredMesh !== validIntersects[0].object) {
+                        hoveredMesh = validIntersects[0].object;
+                        canvasContainer.style.cursor = 'pointer';
+                    }
+                } else {
+                    hoveredMesh = null;
+                    canvasContainer.style.cursor = 'default';
+                }
+                
+                rouletteMeshes.forEach(mesh => {
+                    let currentTargetOpacity = targetOpacity;
+                    let targetEmissiveHex = 0x000000;
+                    
+                    if (mesh === selectedMesh) {
+                        targetEmissiveHex = 0x666600; 
+                        currentTargetOpacity = 1.0;
+                    } else if (mesh === hoveredMesh) {
+                        targetEmissiveHex = 0x333333; 
+                        currentTargetOpacity = Math.max(0.8, targetOpacity);
+                    }
+                    
+                    const targetColor = new THREE.Color(targetEmissiveHex);
+                    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                    const isGlassMesh = mesh.userData.pieceType === 'glass';
+                    
+                    materials.forEach(mat => {
+                        if (mat) {
+                            if (mat.emissive) mat.emissive.lerp(targetColor, 0.1);
+                            
+                            if (isGlassMesh) {
+                                mat.transparent = true;
+                                mat.opacity = 0.25;
+                                mat.depthWrite = false;
+                            } else {
+                                mat.opacity += (currentTargetOpacity - mat.opacity) * 0.05;
+                                mat.transparent = mat.opacity < 0.99;
+                                mat.depthWrite = !mat.transparent;
+                            }
+                        }
+                    });
+                    
+                    const targetPos = isExploded ? mesh.userData.explodedPosition : mesh.userData.originalPosition;
+                    if (targetPos) mesh.position.lerp(targetPos, 0.08);
+                });
+
+                updateInfographic();
+                renderer.render(scene, camera);
+            }
+        }
+        animate();
+
+        const pieceData = {
+            glass: { title: "Vidrio superior", sub: "Cobertura Protectora", summary: "Cubierta de policarbonato que sella la zona de giro y evita manipulación.", material: "Policarbonato", weight: "4.2 kg", function: "Protección y sellado.", icon: "shield-check", dur: 95, fric: 15, prec: 80 },
+            bowl: { title: "Taza Cóncava", sub: "Base Estructural", summary: "Estructura fija tallada que alberga el rotor y mantiene el equilibrio del sistema.", material: "Madera y aluminio", weight: "35.5 kg", function: "Estabilizar el conjunto.", icon: "layers", dur: 90, fric: 40, prec: 95 },
+            shaft: { title: "Eje y Rodamientos", sub: "Mecanismo de Giro", summary: "Pivote central con rodamientos cerámicos que gobierna el giro con fricción casi nula.", material: "Acero y cerámica", weight: "2.8 kg", function: "Rotación concéntrica.", icon: "settings", dur: 98, fric: 5, prec: 99 },
+            separators: { title: "Rotor y Separadores", sub: "Zona de Casillas", summary: "Sección móvil de aluminio que contiene los números y deflectores romboidales.", material: "Aluminio fundido", weight: "18.2 kg", function: "Controlar caída de bola.", icon: "pie-chart", dur: 85, fric: 60, prec: 90 },
+            default: { title: "Componente", sub: "Pieza Estructural", summary: "Parte del ensamblaje principal de la ruleta.", material: "Aleación estándar", weight: "-- kg", function: "Soporte estructural.", icon: "box", dur: 50, fric: 50, prec: 50 }
+        };
+
+        const modeData = {
+            general: { label: "VISTA GENERAL 3D", defaultPiece: "glass" },
+            exploded: { label: "DESPIECE", defaultPiece: "bowl" },
+            section: { label: "CORTE TRANSVERSAL", defaultPiece: "shaft" },
+            transparency: { label: "TRANSPARENCIA", defaultPiece: "glass" },
+            zoom: { label: "DETALLE PISTA", defaultPiece: "separators" }
+        };
+
+        function updateInfoCard(data) {
+            document.getElementById("infoTitle").textContent = data.title;
+            document.getElementById("infoSub").textContent = data.sub;
+            document.getElementById("infoSummary").textContent = data.summary;
+            document.getElementById("infoMaterial").textContent = data.material;
+            document.getElementById("infoWeight").textContent = data.weight;
+            document.getElementById("infoFunction").textContent = data.function;
+            
+            document.getElementById("statDurability").style.width = data.dur + "%";
+            document.getElementById("statDurabilityVal").textContent = data.dur + "%";
+            document.getElementById("statFriction").style.width = data.fric + "%";
+            document.getElementById("statFrictionVal").textContent = data.fric + "%";
+            document.getElementById("statPrecision").style.width = data.prec + "%";
+            document.getElementById("statPrecisionVal").textContent = data.prec + "%";
+            
+            const iconEl = document.getElementById("infoIcon");
+            if(iconEl && window.lucide) {
+                const newIcon = document.createElement('i');
+                newIcon.setAttribute("data-lucide", data.icon);
+                newIcon.className = "info-card-icon";
+                newIcon.id = "infoIcon";
+                iconEl.parentNode.replaceChild(newIcon, iconEl);
+                lucide.createIcons({ attrs: { class: "info-card-icon" } });
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const config = modeData[mode];
+            document.getElementById("appFrame").className = `viewport-panel mode-${mode}`;
+            document.getElementById("stageTitle").textContent = config.label;
+            document.getElementById("modeChip").textContent = `STATUS: [${config.label}]`;
+            
+            const piece = pieceData[config.defaultPiece];
+            updateInfoCard(piece);
+
+            document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {
+                btn.classList.toggle("is-active", btn.dataset.mode === mode);
+            });
+            
+            if (mode === 'general') setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+            
+            targetCameraPos.set(0, 150, 400);
+            targetCameraLookAt.set(0, 0, 0);
+            targetClippingConstant = 200;
+            targetOpacity = 1.0;
+            isExploded = false;
+
+            if (mode === 'section') targetClippingConstant = 0; 
+            else if (mode === 'exploded') {
+                isExploded = true;
+                targetCameraPos.set(0, 180, 520);
+            }
+            else if (mode === 'transparency') targetOpacity = 0.25;
+            else if (mode === 'zoom') { targetCameraPos.set(0, 80, 150); targetCameraLookAt.set(0, -20, 50); }
+            
+            // Toggle static images fallback visibility in local mode (if WebGL is hidden/not loaded)
+            if (document.getElementById('threeCanvas').style.opacity === '0') {
+                document.querySelectorAll(".placeholder-image").forEach(img => {
+                    img.classList.remove("is-active");
+                });
+                const activeImg = document.querySelector(`.placeholder-image.img-${mode}`);
+                if (activeImg) {
+                    activeImg.classList.add("is-active");
+                }
+            }
+        }
+
+        document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {
+            btn.addEventListener("click", () => setMode(btn.dataset.mode));
+        });
+
+        // Initialize general mode
+        setMode("general");
+    </script>
+</body>
+</html>

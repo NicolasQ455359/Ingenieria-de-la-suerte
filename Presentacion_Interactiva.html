@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UI KIT y Pantallas - Ingeniería de la Suerte</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css" id="theme">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* NUEVA PALETA: INSPIRADA EN LA RULETA FÍSICA */
+            --casino-green: #0A4A2F;
+            --casino-dark: #03150D;
+            --roulette-red: #B71C1C;
+            --roulette-black: #111111;
+            --gold: #D4AF37;
+            --glass-bg: rgba(15, 15, 15, 0.85);
+            --text-main: #F5F5F5;
+        }
+
+        body {
+            /* Fondo de paño de casino verde elegante */
+            background: radial-gradient(circle at center, var(--casino-green) 0%, var(--casino-dark) 100%);
+            overflow: hidden;
+        }
+
+        /* Brillo sutil de oro de fondo */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 20%; left: 30%;
+            width: 40vw; height: 40vw;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.08);
+            filter: blur(80px);
+            z-index: -1;
+            animation: pulse 6s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .reveal { font-family: 'Outfit', sans-serif; color: var(--text-main); }
+
+        .reveal h1, .reveal h2, .reveal h3 {
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        /* TAMAÑOS DRÁSTICAMENTE REDUCIDOS PARA QUE QUEPA TODO */
+        .reveal h1 {
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            font-size: 2.2em; /* Mucho más pequeño */
+            margin-bottom: 10px;
+        }
+
+        .reveal h2 {
+            color: #fff;
+            font-size: 1.3em; /* Mucho más pequeño */
+            display: inline-block;
+            border-bottom: 2px solid var(--gold);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+
+        .reveal p, .reveal li {
+            font-weight: 300;
+            color: #E0E0E0;
+            font-size: 0.55em; /* Letra pequeña y elegante para evitar desbordes */
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+
+        /* Glass Cards: Ajustadas para máximo espacio interior */
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-top: 2px solid var(--gold); /* Acento superior dorado */
+            border-radius: 6px;
+            padding: 12px 15px; /* Padding apretado */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+            text-align: left;
+            position: relative;
+        }
+
+        .glass-panel h3 {
+            color: var(--gold);
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .glass-panel p {
+            margin-bottom: 6px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+        ul { list-style-type: square; padding-left: 15px; margin-top: 5px; margin-bottom: 5px;}
+        li::marker { color: var(--gold); }
+        li { margin-bottom: 4px; }
+
+        .highlight { color: var(--gold); font-weight: 400; }
+        .highlight-red { color: #FF5252; font-weight: 400; }
+        
+        .code-text {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85em; /* Relativo al 0.55em del padre */
+            color: #aaa;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        /* Colores de la paleta de la UI */
+        .color-preview {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Imágenes de las pantallas */
+        .wireframe-img {
+            max-height: 450px;
+            border: 2px solid var(--gold);
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        /* Botón PDF */
+        .pdf-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9em;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pdf-btn:hover {
+            background: #fff;
+            transform: scale(1.05);
+        }
+        @media print {
+            .pdf-btn { display: none; }
+        }
+    </style>
+    <!-- LIBRERÍA DE ICONOS: LUCIDE -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <button class="pdf-btn" onclick="exportToPDF()">
+        <i data-lucide="download"></i> Guardar como PDF
+    </button>
+    
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- INICIO -->
+            <section data-transition="zoom">
+                <h1 style="margin-top: 50px;">UI KIT y Pantallas</h1>
+                <h3 style="color: #fff; font-weight: 300; margin-top: 10px;">Ingeniería de la Suerte</h3>
+                <p style="margin-top: 20px; font-size: 0.7em; letter-spacing: 1px; color: var(--gold);">Nicolás Quintero Cardona</p>
+            </section>
+
+            <!-- SECCIÓN 1: ARQUITECTURA -->
+            <section>
+                <section data-transition="slide">
+                    <h2>01. Arquitectura</h2>
+                    <p style="text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Organización de la Información</p>
+                    <div class="grid-3">
+                        <div class="glass-panel">
+                            <h3>Nivel Superior</h3>
+                            <p class="highlight" style="font-size: 1.1em; margin-bottom: 5px;">Anatomía Externa</p>
+                            <ul>
+                                <li><b>Carcasa:</b> Soporte de madera y acabados.</li>
+                                <li><b>Taza (Bowl):</b> Estructura de aluminio.</li>
+                                <li><b>Vidrio:</b> Protector de policarbonato.</li>
+                            </ul>
+                        </div>
+                        <div class="glass-panel">
+                            <h3>Nivel Medio</h3>
+                            <p class="highlight" style="font-size: 1.1em; margin-bottom: 5px;">Mecánica de Giro</p>
+                            <ul>
+                                <li><b>Eje Central:</b> Acero inoxidable (corazón).</li>
+                                <li><b>Rodamientos:</b> Bolas cerámicas.</li>
+                                <li><b>Cúpula:</b> Bronce para inercia.</li>
+                            </ul>
+                        </div>
+                        <div class="glass-panel">
+                            <h3>Nivel Detalle</h3>
+                            <p class="highlight" style="font-size: 1.1em; margin-bottom: 5px;">Juego</p>
+                            <ul>
+                                <li><b>Disco:</b> Celdas (0-36).</li>
+                                <li><b>Deflectores:</b> Rombos de rebote.</li>
+                                <li><b>Bola 20mm:</b> Precisión móvil.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- SECCIÓN 2: GUIÓN -->
+            <section>
+                <section data-transition="convex">
+                    <h2>02. Guion Narrativo</h2>
+                    <div class="grid-2">
+                        <div class="glass-panel">
+                            <h3>1. Intro</h3>
+                            <p>"Más que azar, es <span class="highlight">ingeniería de precisión</span>."</p>
+                            <p class="code-text">&gt; Visual: Ruleta en reposo.</p>
+                        </div>
+                        <div class="glass-panel">
+                            <h3>2. Estructura (Corte)</h3>
+                            <p>"Rodamientos que garantizan un <span class="highlight">giro sin fricción</span>."</p>
+                            <p class="code-text">&gt; Visual: Corte transversal.</p>
+                        </div>
+                        <div class="glass-panel">
+                            <h3>3. Despiece</h3>
+                            <p>"Cada componente diseñado para un <span class="highlight">ensamblaje perfecto</span>."</p>
+                            <p class="code-text">&gt; Visual: Explosión vertical.</p>
+                        </div>
+                        <div class="glass-panel">
+                            <h3>4. Detalle (Bola)</h3>
+                            <p>"Asegura un <span class="highlight-red">resultado 100% aleatorio</span>."</p>
+                            <p class="code-text">&gt; Visual: Zoom a pista y rombos.</p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- SECCIÓN 3: UI KIT (IDENTIDAD) -->
+            <section data-transition="convex">
+                <div class="glass-panel" style="border-left: 10px solid var(--gold); padding: 40px; background: rgba(0,0,0,0.7);">
+                    <h2 style="color: var(--gold); font-size: 2.2em; margin: 0;">03. UI KIT</h2>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 4: PALETA DE COLORES -->
+            <section data-transition="slide">
+                <h2 style="color: var(--gold); margin-bottom: 30px;">Paleta de Colores</h2>
+                <div class="glass-panel" style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; padding: 40px;">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div style="width: 80px; height: 80px; background: #0A4A2F; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 0 20px #0A4A2F;"></div>
+                        <div style="text-align: left;">
+                            <p style="font-weight: bold; color: #fff; margin: 0;">DEEP EMERALD (#0A4A2F)</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div style="width: 80px; height: 80px; background: #D4AF37; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 0 20px #D4AF37;"></div>
+                        <div style="text-align: left;">
+                            <p style="font-weight: bold; color: var(--gold); margin: 0;">METALLIC GOLD (#D4AF37)</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div style="width: 80px; height: 80px; background: #B71C1C; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); box-shadow: 0 0 20px #B71C1C;"></div>
+                        <div style="text-align: left;">
+                            <p style="font-weight: bold; color: var(--roulette-red); margin: 0;">CRIMSON RED (#B71C1C)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 5: SISTEMA TIPOGRÁFICO -->
+            <section data-transition="convex">
+                <h2 style="color: var(--gold); margin-bottom: 30px;">Sistema Tipográfico</h2>
+                <div class="glass-panel" style="max-width: 500px; margin: 0 auto; padding: 40px;">
+                    <p style="font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--gold); font-size: 1.5em; margin-bottom: 30px;">OUTFIT BOLD</p>
+                    <p style="font-family: 'Space Mono', monospace; color: var(--gold); font-size: 1.2em;">SPACE MONO</p>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 6: COMPORTAMIENTO HUD -->
+            <section data-transition="zoom">
+                <h2 style="color: var(--gold); margin-bottom: 30px;">Comportamiento HUD</h2>
+                <div class="grid-2">
+                    <div class="glass-panel" style="border-top: 3px solid var(--roulette-red);">
+                        <i data-lucide="mouse-pointer-2" style="width: 40px; height: 40px; color: var(--roulette-red); margin-bottom: 15px;"></i>
+                        <h3 style="font-size: 0.9em;">OUTLINE STYLE</h3>
+                        <p style="font-size: 0.45em;">Botones minimalistas con bordes finos. Solo el botón activo se rellena de color sólido.</p>
+                    </div>
+                    <div class="glass-panel">
+                        <i data-lucide="refresh-cw" style="width: 40px; height: 40px; color: var(--gold); margin-bottom: 15px;"></i>
+                        <h3 style="font-size: 0.9em;">REAL-TIME SYNC</h3>
+                        <p style="font-size: 0.45em;">El panel de información se actualiza dinámicamente al interactuar con el modelo 3D.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCI?N 05: PROYECTO FINAL -->
+            <section>
+                <section>
+                    <h2>05. Proyecto Final</h2>
+                    <p style="text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Pantallas actualizadas del programa interactivo</p>
+                    <p class="highlight" style="font-size: 1.2em; animation: pulse 2s infinite alternate;">? Desliza para ver el avance final ?</p>
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Pantalla principal</h3>
+                    <img src="imagenes pantallas/pantalla principal.png" class="wireframe-img" alt="Pantalla principal">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Panel de control</h3>
+                    <img src="imagenes pantallas/panel de control.png" class="wireframe-img" alt="Panel de control">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Panel de control ampliado</h3>
+                    <img src="imagenes pantallas/panel de control 2.png" class="wireframe-img" alt="Panel de control ampliado">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Modo corte transversal</h3>
+                    <img src="imagenes pantallas/corte.png" class="wireframe-img" alt="Modo corte transversal">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Modo despiece</h3>
+                    <img src="imagenes pantallas/despiece.png" class="wireframe-img" alt="Modo despiece">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Modo transparencia</h3>
+                    <img src="imagenes pantallas/transparencia.png" class="wireframe-img" alt="Modo transparencia">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Modo zoom</h3>
+                    <img src="imagenes pantallas/zoom.png" class="wireframe-img" alt="Modo zoom">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Análisis de Datos</h3>
+                    <img src="imagenes pantallas/datos y graficos.png" class="wireframe-img" alt="Datos y Gráficos">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Mapa Interactivo</h3>
+                    <img src="imagenes pantallas/mapa interactivo.png" class="wireframe-img" alt="Mapa Interactivo">
+                </section>
+            </section>
+
+            <!-- SECCI?N 4: WIREFRAMES (DIAPOSITIVAS VERTICALES) -->
+            <section>
+                <section>
+                    <h2>04. Pantallas / Wireframes</h2>
+                    <p style="text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px;">Estructura de la Interfaz HUD</p>
+                    <p class="highlight" style="font-size: 1.2em; animation: pulse 2s infinite alternate;">? Desliza para ver la propuesta ?</p>
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Pantalla 1</h3>
+                    <img src="imagenes pantallas/pantalla 1.png" class="wireframe-img" alt="Pantalla 1">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Pantalla 2</h3>
+                    <img src="imagenes pantallas/pantalla 2.png" class="wireframe-img" alt="Pantalla 2">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Pantalla 3</h3>
+                    <img src="imagenes pantallas/pantalla 3.png" class="wireframe-img" alt="Pantalla 3">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Pantalla 4</h3>
+                    <img src="imagenes pantallas/pantalla 4.png" class="wireframe-img" alt="Pantalla 4">
+                </section>
+                <section>
+                    <h3 style="font-size: 1em; margin-bottom: 10px;">Pantalla 5</h3>
+                    <img src="imagenes pantallas/pantalla 5.png" class="wireframe-img" alt="Pantalla 5">
+                </section>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script>
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            center: true,
+            hash: true,
+            transition: 'convex',
+            backgroundTransition: 'slide',
+            keyboard: true
+        });
+        // Inicializar iconos de Lucide
+        lucide.createIcons();
+
+        // Función para exportar a PDF usando la funcionalidad nativa de Reveal.js
+        function exportToPDF() {
+            if (window.location.search.match(/print-pdf/gi)) {
+                window.print();
+            } else {
+                window.location.search = '?print-pdf';
+            }
+        }
+        
+        // Abrir la ventana de impresión automáticamente si estamos en modo PDF
+        if (window.location.search.match(/print-pdf/gi)) {
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

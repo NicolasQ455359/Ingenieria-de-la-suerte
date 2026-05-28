@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Datos | Ingeniería de la Suerte</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        body {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* --- GLOBAL NAVIGATION --- */
+        .global-nav {
+            flex-shrink: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+        }
+
+        /* --- CONTENT WRAPPER --- */
+        #main-content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .nav-tab {
+            text-decoration: none;
+        }
+        
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GLOBAL NAVIGATION -->
+    <nav class="global-nav">
+        <a href="index.html" class="nav-tab">INSPECCIÓN 3D</a>
+        <a href="datos.html" class="nav-tab active">ANÁLISIS DE DATOS</a>
+        <a href="mapa.html" class="nav-tab">MAPA INTERACTIVO</a>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div id="main-content">
+        <div class="app-shell">
+            <div class="timeline-hud-container">
+                <div class="timeline-header">
+                    <h3>SIMULACIÓN TEMPORAL</h3>
+                    <span id="timeline-time-display">20:00 - Expectativas Claras</span>
+                </div>
+                <input type="range" min="0" max="4" value="0" class="cyber-slider" id="timeSlider">
+                <div class="timeline-ticks">
+                    <span>8 PM</span>
+                    <span>10 PM</span>
+                    <span>12 AM</span>
+                    <span>2 AM</span>
+                    <span>4 AM</span>
+                </div>
+            </div>
+
+            <div class="data-shell">
+                <!-- Chart 1: Exploratorio -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
+                            <h3 class="chart-title">¿Más riesgo significa más ganancias?</h3>
+                            <div class="chart-subtitle">> ANÁLISIS EXPLORATORIO (DISPERSIÓN)</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-scatter-container">
+                        <canvas id="chartScatter"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Línea -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
+                            <h3 class="chart-title">Evolución del dinero durante la noche</h3>
+                            <div class="chart-subtitle">> TELEMETRÍA TEMPORAL (LÍNEA)</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-line-container">
+                        <canvas id="chartLine"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Dona -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
+                            <h3 class="chart-title">¿De dónde venía el dinero para apostar?</h3>
+                            <div class="chart-subtitle">> DISTRIBUCIÓN ESTADÍSTICA (DONA)</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-donut-container">
+                        <canvas id="chartDonut"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Barras -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div>
+                            <h3 class="chart-title">Cuando el sistema parecía funcionar</h3>
+                            <div class="chart-subtitle">> RENDIMIENTO DE EVENTOS (BARRAS)</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-bar-container">
+                        <canvas id="chartBar"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialize Lucide icons on start -->
+    <script>
+        if(window.lucide) {
+            lucide.createIcons();
+        }
+    </script>
+
+    <!-- SCREEN 2 CODE: TELEMETRY & DATA ANALYTICS (CHART.JS) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Global configurations for Chart.js
+            Chart.defaults.color = '#8e9590';
+            Chart.defaults.font.family = '"Space Mono", monospace';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+            const timelineData = [
+                {
+                    timeStr: "20:00 - Expectativas Claras",
+                    scatter: [
+                        { x: 3, y: 150000, name: "Rojo/Negro" },
+                        { x: 5, y: 50000, name: "Sectores" },
+                        { x: 7, y: 0, name: "Martingala" },
+                        { x: 9, y: -20000, name: "Impulsivas" }
+                    ],
+                    line: [4000000, 4500000, 4200000, 4600000, 5000000],
+                    donut: [100, 0, 0, 0], 
+                    bar: [50000, 150000, 0, -20000]
+                },
+                {
+                    timeStr: "22:00 - Estrategia Base",
+                    scatter: [
+                        { x: 3, y: 300000, name: "Rojo/Negro" },
+                        { x: 5, y: 800000, name: "Sectores" },
+                        { x: 7, y: 100000, name: "Martingala" },
+                        { x: 9, y: -50000, name: "Impulsivas" }
+                    ],
+                    line: [4000000, 6000000, 7500000, 9000000, 10000000],
+                    donut: [70, 0, 0, 30],
+                    bar: [800000, 300000, 100000, -50000]
+                },
+                {
+                    timeStr: "00:00 - La Racha de Oro",
+                    scatter: [
+                        { x: 3, y: 500000, name: "Rojo/Negro" },
+                        { x: 5, y: 1500000, name: "Sectores" },
+                        { x: 7, y: -200000, name: "Martingala" },
+                        { x: 9, y: -100000, name: "Impulsivas" }
+                    ],
+                    line: [4000000, 10000000, 15000000, 18000000, 22000000],
+                    donut: [45, 16, 7, 32],
+                    bar: [1500000, 500000, -200000, -100000]
+                },
+                {
+                    timeStr: "02:00 - Avaricia y Descontrol",
+                    scatter: [
+                        { x: 3, y: 100000, name: "Rojo/Negro" },
+                        { x: 5, y: 500000, name: "Sectores" },
+                        { x: 7, y: -800000, name: "Martingala" },
+                        { x: 9, y: -2000000, name: "Impulsivas" }
+                    ],
+                    line: [22000000, 18000000, 14000000, 11000000, 8000000],
+                    donut: [60, 20, 5, 15],
+                    bar: [500000, 100000, -800000, -2000000]
+                },
+                {
+                    timeStr: "04:00 - El Abismo",
+                    scatter: [
+                        { x: 3, y: -500000, name: "Rojo/Negro" },
+                        { x: 5, y: -1000000, name: "Sectores" },
+                        { x: 7, y: -2500000, name: "Martingala" },
+                        { x: 9, y: -4000000, name: "Impulsivas" }
+                    ],
+                    line: [8000000, 5000000, 2000000, 500000, 0],
+                    donut: [95, 5, 0, 0],
+                    bar: [-1000000, -500000, -2500000, -4000000]
+                }
+            ];
+
+            let globalChartScatter, globalChartLine, globalChartDonut, globalChartBar;
+            const initialData = timelineData[0];
+
+            // 1. Scatter (Risk vs Gain)
+            const ctxScatter = document.getElementById('chartScatter').getContext('2d');
+            globalChartScatter = new Chart(ctxScatter, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Estrategias',
+                        data: initialData.scatter,
+                        backgroundColor: '#D4AF37', 
+                        pointRadius: 8,
+                        pointHoverRadius: 11,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const raw = ctx.raw;
+                                    return `${raw.name}: $${raw.y.toLocaleString()} (Riesgo: ${raw.x})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Nivel de Riesgo (1-10)' }, min: 2, max: 10 },
+                        y: { title: { display: true, text: 'Ganancia promedio ($)' }, min: -4500000, max: 2000000 }
+                    }
+                }
+            });
+
+            // 2. Line (Gain evolution)
+            const ctxLine = document.getElementById('chartLine').getContext('2d');
+            globalChartLine = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: ["T1 (8 PM)", "T2 (10 PM)", "T3 (12 AM)", "T4 (2 AM)", "T5 (4 AM)"],
+                    datasets: [{
+                        label: 'Dinero total',
+                        data: initialData.line,
+                        borderColor: '#D4AF37', 
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0A4A2F'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            min: 0, max: 25000000,
+                            ticks: { callback: (val) => '$' + (val/1000000) + 'M' }
+                        }
+                    }
+                }
+            });
+
+            // 3. Donut (Sources)
+            const ctxDonut = document.getElementById('chartDonut').getContext('2d');
+            globalChartDonut = new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ["Negocio familiar", "Reinversión", "Ganancias previas", "Ganancia inicial"],
+                    datasets: [{
+                        data: initialData.donut,
+                        backgroundColor: [
+                            '#0A4A2F', 
+                            '#D4AF37', 
+                            '#B71C1C', 
+                            '#8e9590'  
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#111'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#ebe8d9', font: { size: 11 } } }
+                    }
+                }
+            });
+
+            // 4. Bar (Performances)
+            const ctxBar = document.getElementById('chartBar').getContext('2d');
+            globalChartBar = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ["Sectores", "Rojo/Negro", "Martingala", "Impulsivas"],
+                    datasets: [{
+                        label: 'Ganancia/Pérdida ($)',
+                        data: initialData.bar,
+                        backgroundColor: initialData.bar.map(v => v < 0 ? '#B71C1C' : '#0A4A2F'),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 800, easing: 'easeOutQuart' },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            min: -4500000, max: 2000000,
+                            ticks: { callback: (val) => '$' + (val/1000).toLocaleString() + 'k' }
+                        }
+                    }
+                }
+            });
+            
+            // Timeline Range slider HUD updating Chart.js values
+            const timeSlider = document.getElementById('timeSlider');
+            const timeDisplay = document.getElementById('timeline-time-display');
+
+            timeSlider.addEventListener('input', (e) => {
+                const index = parseInt(e.target.value);
+                const snapshot = timelineData[index];
+                
+                timeDisplay.textContent = snapshot.timeStr;
+                
+                if (index >= 3) { 
+                    timeDisplay.style.color = '#B71C1C';
+                    timeDisplay.style.borderColor = '#B71C1C';
+                    timeDisplay.style.boxShadow = '0 0 10px rgba(183, 28, 28, 0.5)';
+                } else if (index === 2) { 
+                    timeDisplay.style.color = '#D4AF37';
+                    timeDisplay.style.borderColor = '#D4AF37';
+                    timeDisplay.style.boxShadow = '0 0 10px rgba(212, 175, 55, 0.5)';
+                } else { 
+                    timeDisplay.style.color = '#0A4A2F';
+                    timeDisplay.style.borderColor = '#0A4A2F';
+                    timeDisplay.style.boxShadow = '0 0 10px rgba(10, 74, 47, 0.5)';
+                }
+
+                globalChartScatter.data.datasets[0].data = snapshot.scatter;
+                globalChartScatter.update();
+
+                globalChartLine.data.datasets[0].data = snapshot.line;
+                globalChartLine.update();
+
+                globalChartDonut.data.datasets[0].data = snapshot.donut;
+                globalChartDonut.update();
+
+                globalChartBar.data.datasets[0].data = snapshot.bar;
+                globalChartBar.data.datasets[0].backgroundColor = snapshot.bar.map(v => {
+                    if (v < 0) return '#B71C1C';
+                    if (v > 1000000) return '#D4AF37';
+                    return '#0A4A2F';
+                });
+                globalChartBar.update();
+            });
+
+            // Handle Chart resizing dynamically
+            window.addEventListener('resize', () => {
+                globalChartScatter.resize();
+                globalChartLine.resize();
+                globalChartDonut.resize();
+                globalChartBar.resize();
+            });
+        });
+    </script>
+</body>
+</html>

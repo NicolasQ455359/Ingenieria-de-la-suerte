@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: transparent; padding: 0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        #screen-data { display: flex; flex: 1; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div id="screen-data">
+        <div class="timeline-hud-container">
+            <div class="timeline-header">
+                <h3>SIMULACIÓN TEMPORAL</h3>
+                <span id="timeline-time-display">20:00 - Expectativas Claras</span>
+            </div>
+            <input type="range" min="0" max="4" value="0" class="cyber-slider" id="timeSlider">
+            <div class="timeline-ticks">
+                <span>8 PM</span>
+                <span>10 PM</span>
+                <span>12 AM</span>
+                <span>2 AM</span>
+                <span>4 AM</span>
+            </div>
+        </div>
+
+        <div class="data-shell">
+            <!-- Chart 1: Exploratorio -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">¿Más riesgo significa más ganancias?</h3>
+                        <div class="chart-subtitle">> ANÁLISIS EXPLORATORIO (DISPERSIÓN)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-scatter-container">
+                    <canvas id="chartScatter"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Línea -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">Evolución del dinero durante la noche</h3>
+                        <div class="chart-subtitle">> TELEMETRÍA TEMPORAL (LÍNEA)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-line-container">
+                    <canvas id="chartLine"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 3: Dona -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">¿De dónde venía el dinero para apostar?</h3>
+                        <div class="chart-subtitle">> DISTRIBUCIÓN ESTADÍSTICA (DONA)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-donut-container">
+                    <canvas id="chartDonut"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 4: Barras -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">Cuando el sistema parecía funcionar</h3>
+                        <div class="chart-subtitle">> RENDIMIENTO DE EVENTOS (BARRAS)</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chart-bar-container">
+                    <canvas id="chartBar"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/analytics.js"></script>
+</body>
+</html>
