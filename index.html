@@ -70,6 +70,20 @@
             width: 100%;
         }
 
+        @media (max-width: 768px) {
+            .app-shell {
+                display: flex !important;
+                flex-direction: column !important;
+                height: auto !important;
+                padding: 10px !important;
+                gap: 16px !important;
+            }
+            .viewport-panel {
+                height: 55vh !important;
+                min-height: 360px !important;
+            }
+        }
+
         .nav-tab {
             text-decoration: none;
         }
@@ -644,11 +658,12 @@
 
             const rect = canvasContainer.getBoundingClientRect();
 
+            const isMobile = window.innerWidth < 768;
             const parts = {
-                glass: { id: 'label-glass', mesh: null, offsetX: -190, offsetY: -110 },
-                separators: { id: 'label-separators', mesh: null, offsetX: 190, offsetY: -40 },
-                shaft: { id: 'label-shaft', mesh: null, offsetX: -190, offsetY: 100 },
-                bowl: { id: 'label-bowl', mesh: null, offsetX: 190, offsetY: 110 }
+                glass: { id: 'label-glass', mesh: null, offsetX: isMobile ? -100 : -190, offsetY: isMobile ? -130 : -110 },
+                separators: { id: 'label-separators', mesh: null, offsetX: isMobile ? 100 : 190, offsetY: isMobile ? -50 : -40 },
+                shaft: { id: 'label-shaft', mesh: null, offsetX: isMobile ? -100 : -190, offsetY: isMobile ? 90 : 100 },
+                bowl: { id: 'label-bowl', mesh: null, offsetX: isMobile ? 100 : 190, offsetY: isMobile ? 130 : 110 }
             };
 
             rouletteMeshes.forEach(mesh => {
@@ -680,7 +695,8 @@
                     labelEl.style.left = `${labelX}px`;
                     labelEl.style.top = `${labelY}px`;
 
-                    const startX = labelX + (p.offsetX > 0 ? -100 : 100);
+                    const bubbleHalfWidth = isMobile ? 70 : 100;
+                    const startX = labelX + (p.offsetX > 0 ? -bubbleHalfWidth : bubbleHalfWidth);
                     const startY = labelY;
 
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');

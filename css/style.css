@@ -652,3 +652,133 @@ body::-webkit-scrollbar-thumb:hover {
     backdrop-filter: blur(10px);
     z-index: 10;
 }
+
+/* --- MOBILE RESPONSIVENESS OVERRIDES --- */
+@media (max-width: 768px) {
+    /* Global Navigation */
+    .global-nav {
+        gap: 8px !important;
+        padding: 10px 8px !important;
+    }
+    .nav-tab {
+        padding: 8px 10px !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 0.05em !important;
+    }
+
+    /* Screen 1: 3D Roulette Viewer Layout */
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh;
+    }
+    #main-content {
+        height: auto !important;
+        overflow: visible !important;
+        flex: none !important;
+    }
+    .app-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        gap: 16px !important;
+        padding: 10px !important;
+    }
+    .viewport-panel {
+        height: 55vh !important;
+        min-height: 360px !important;
+    }
+    .side-panel {
+        height: auto !important;
+        overflow-y: visible !important;
+        padding: 16px !important;
+    }
+
+    /* 3D Infographic Labels on Mobile */
+    .info-bubble {
+        width: 140px !important;
+        padding: 6px 8px !important;
+    }
+    .info-bubble h4 {
+        font-size: 0.7rem !important;
+    }
+    .info-bubble p {
+        font-size: 0.6rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Screen 2: Data Analytics Layout */
+    .data-shell {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto !important;
+        gap: 16px !important;
+    }
+    .chart-container {
+        min-height: 220px !important;
+    }
+
+    /* Screen 3: Interactive Map HUD Overrides */
+    .map-money-hud, 
+    .map-clock-hud {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
+    }
+    .map-money-hud {
+        top: 10px !important;
+        left: 10px !important;
+    }
+    .map-clock-hud {
+        top: 10px !important;
+        right: 10px !important;
+    }
+    .money-value, 
+    .clock-time {
+        font-size: 0.9rem !important;
+    }
+    .clock-label {
+        font-size: 0.55rem !important;
+        padding: 2px 4px !important;
+    }
+    .map-story-panel {
+        flex-direction: column !important;
+        gap: 10px !important;
+        padding: 12px 16px !important;
+        bottom: 10px !important;
+        left: 10px !important;
+        right: 10px !important;
+    }
+    .map-story-text {
+        font-size: 0.78rem !important;
+        line-height: 1.4 !important;
+        text-align: center;
+    }
+    .map-story-panel .map-btn {
+        width: 100% !important;
+        padding: 8px 16px !important;
+        font-size: 0.78rem !important;
+        text-align: center;
+    }
+    .map-overlay-start .map-start-title {
+        font-size: 1.6rem !important;
+        text-align: center;
+        letter-spacing: 0.12em !important;
+    }
+    .map-overlay-start .map-start-subtitle {
+        font-size: 1.0rem !important;
+    }
+    .map-overlay-start .map-start-desc {
+        font-size: 0.78rem !important;
+        text-align: center;
+        padding: 0 16px !important;
+        margin: 10px 0 20px !important;
+    }
+    .map-start-buttons {
+        flex-direction: column !important;
+        width: 80% !important;
+        gap: 10px !important;
+    }
+    .map-start-buttons .map-btn {
+        width: 100% !important;
+        text-align: center;
+    }
+}
