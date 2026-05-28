@@ -122,9 +122,9 @@
         }
 
         // Try loading new GLB
-        log('Attempting to load rueltaTexturas.glb...');
+        log('Attempting to load assets/models/rueltaTexturas.glb...');
         const gltfLoader = new GLTFLoader();
-        gltfLoader.load('rueltaTexturas.glb', 
+        gltfLoader.load('assets/models/rueltaTexturas.glb', 
             (gltf) => {
                 log('✅ GLB loaded successfully!', 'ok');
                 log(`Scenes: ${gltf.scenes ? gltf.scenes.length : 0}`);
@@ -132,7 +132,7 @@
                 
                 const model = gltf.scene;
                 scene.add(model);
-                analyzeObject(model, 'rueltaTexturas.glb');
+                analyzeObject(model, 'assets/models/rueltaTexturas.glb');
             },
             (progress) => {
                 if (progress.total) {

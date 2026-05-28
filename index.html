@@ -260,11 +260,11 @@
                             </div>
 
                             <!-- Pre-rendered textured screenshots fallback (always visible before GLB load) -->
-                            <img src="imagenes pantallas/pantalla principal.png" class="placeholder-image img-general is-active" alt="Vista General" onerror="this.src='Imagen explicativa.png';">
-                            <img src="imagenes pantallas/corte.png" class="placeholder-image img-section" alt="Corte Transversal" onerror="this.src='Imagen explicativa.png';">
-                            <img src="imagenes pantallas/despiece.png" class="placeholder-image img-exploded" alt="Despiece" onerror="this.src='Imagen explicativa.png';">
-                            <img src="imagenes pantallas/transparencia.png" class="placeholder-image img-transparency" alt="Transparencia" onerror="this.src='Imagen explicativa.png';">
-                            <img src="imagenes pantallas/zoom.png" class="placeholder-image img-zoom" alt="Zoom" onerror="this.src='Imagen explicativa.png';">
+                            <img src="assets/images/imagenes pantallas/pantalla principal.png" class="placeholder-image img-general is-active" alt="Vista General" onerror="this.src='assets/images/Imagen explicativa.png';">
+                            <img src="assets/images/imagenes pantallas/corte.png" class="placeholder-image img-section" alt="Corte Transversal" onerror="this.src='assets/images/Imagen explicativa.png';">
+                            <img src="assets/images/imagenes pantallas/despiece.png" class="placeholder-image img-exploded" alt="Despiece" onerror="this.src='assets/images/Imagen explicativa.png';">
+                            <img src="assets/images/imagenes pantallas/transparencia.png" class="placeholder-image img-transparency" alt="Transparencia" onerror="this.src='assets/images/Imagen explicativa.png';">
+                            <img src="assets/images/imagenes pantallas/zoom.png" class="placeholder-image img-zoom" alt="Zoom" onerror="this.src='assets/images/Imagen explicativa.png';">
                         </div>
                     </div>
                 </section>
@@ -585,7 +585,7 @@
         // Automated local/CORS load attempt
         try {
             const loader = new GLTFLoader();
-            loader.load('rueltaTexturas.glb', (gltf) => {
+            loader.load('assets/models/rueltaTexturas.glb', (gltf) => {
                 processGLBModel(gltf.scene);
                 setTimeout(() => {
                     const ol = document.getElementById('loadingOverlay');
