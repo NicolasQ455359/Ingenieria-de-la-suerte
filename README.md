@@ -17,16 +17,3 @@ La aplicación utiliza una paleta de colores sofisticada —**Verde Esmeralda De
 1.  **🔍 Inspección 3D (Visor Three.js)**: Permite examinar el modelo 3D de la ruleta mediante vistas técnicas como vista general, corte transversal de piezas, diagrama explotado (despiece vertical), transparencias y zoom de detalle. Incluye fichas de telemetría interactiva al tocar los componentes.
 2.  **📊 Análisis de Datos (Telemetría)**: Un dashboard estadístico que grafica el comportamiento, colores y números calientes/fríos utilizando **Chart.js** para emular el estudio de la aleatoriedad física de los giros.
 3.  **🗺️ Mapa Interactivo**: Un visor geográfico plano en 3D que ilustra la distribución de casinos y terminales físicas de ruleta en el área metropolitana de Medellín.
-
----
-
-## 📁 ¿Qué se hizo para organizar el repositorio?
-
-El repositorio fue reestructurado por completo para eliminar la acumulación de archivos sueltos en el directorio raíz, logrando una arquitectura de software limpia y profesional. Se implementaron los siguientes cambios:
-
-*   **Segmentación de Archivos y Carpetas**:
-    *   **`docs/`**: Se centralizó toda la documentación académica, guiones de diseño, planes de trabajo y presentaciones (`.docx`, `.pptx`, `.pdf`, `.md`).
-    *   **`assets/models/`**: Se agruparon de manera ordenada todos los modelos 3D y archivos nativos de diseño en Blender (`.fbx`, `.glb`, `.blend`, `.blend1`) de gran tamaño.
-    *   **`assets/images/`**: Se reubicaron las capturas del simulador (`imagenes pantallas/`) y la infografía principal (`Imagen explicativa.png`).
-*   **Actualización de Rutas Relativas**: 
-    *   Se modificaron quirúrgicamente los archivos de código fuente (`index.html`, `debug_model.html`, `views/3d.html` y las presentaciones interactivas de Reveal.js) para reajustar las referencias internas de los modelos y capturas. Esto asegura que el visor 3D en Three.js y los marcadores de posición carguen con total normalidad desde sus nuevas carpetas.
