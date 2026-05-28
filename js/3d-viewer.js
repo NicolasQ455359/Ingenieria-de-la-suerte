@@ -22,6 +22,9 @@ export function init3D() {
     controls.dampingFactor = 0.05;
     controls.autoRotate = true;
     controls.autoRotateSpeed = 1.0;
+    controls.addEventListener('start', () => {
+        isTransitioning = false;
+    });
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -42,6 +45,7 @@ export function init3D() {
     let targetClippingConstant = 200; 
     let targetOpacity = 1.0;
     let isExploded = false;
+    let isTransitioning = false;
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2(-1000, -1000);
@@ -192,8 +196,15 @@ export function init3D() {
         if (document.getElementById('screen-3d') && document.getElementById('screen-3d').classList.contains('active')) {
             controls.update();
             
-            camera.position.lerp(targetCameraPos, 0.05);
-            controls.target.lerp(targetCameraLookAt, 0.05);
+            if (isTransitioning) {
+                camera.position.lerp(targetCameraPos, 0.05);
+                controls.target.lerp(targetCameraLookAt, 0.05);
+                if (camera.position.distanceTo(targetCameraPos) < 1.0 && controls.target.distanceTo(targetCameraLookAt) < 1.0) {
+                    camera.position.copy(targetCameraPos);
+                    controls.target.copy(targetCameraLookAt);
+                    isTransitioning = false;
+                }
+            }
             
             clippingPlane.constant += (targetClippingConstant - clippingPlane.constant) * 0.1;
             
@@ -340,6 +351,7 @@ export function init3D() {
         
         if (ruletaModel) ruletaModel.visible = (mode !== 'exploded');
         if (ruletaVidrioModel) ruletaVidrioModel.visible = (mode === 'exploded');
+        isTransitioning = true;
     }
 
     document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {

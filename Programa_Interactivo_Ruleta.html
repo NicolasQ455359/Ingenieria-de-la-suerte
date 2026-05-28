@@ -1315,6 +1315,9 @@
         controls.dampingFactor = 0.05;
         controls.autoRotate = true;
         controls.autoRotateSpeed = 1.0;
+        controls.addEventListener('start', () => {
+            isTransitioning = false;
+        });
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
@@ -1345,6 +1348,7 @@
         let targetClippingConstant = 200; 
         let targetOpacity = 1.0;
         let isExploded = false;
+        let isTransitioning = false;
 
         // -- Variables de Raycasting y Selección --
         const raycaster = new THREE.Raycaster();
@@ -1591,9 +1595,15 @@
             if(document.getElementById('screen-3d').classList.contains('active')) {
                 controls.update();
                 
-                // Animación de cámara
-                camera.position.lerp(targetCameraPos, 0.05);
-                controls.target.lerp(targetCameraLookAt, 0.05);
+                if (isTransitioning) {
+                    camera.position.lerp(targetCameraPos, 0.05);
+                    controls.target.lerp(targetCameraLookAt, 0.05);
+                    if (camera.position.distanceTo(targetCameraPos) < 1.0 && controls.target.distanceTo(targetCameraLookAt) < 1.0) {
+                        camera.position.copy(targetCameraPos);
+                        controls.target.copy(targetCameraLookAt);
+                        isTransitioning = false;
+                    }
+                }
                 
                 // Animación de plano de corte
                 clippingPlane.constant += (targetClippingConstant - clippingPlane.constant) * 0.1;
@@ -1764,6 +1774,7 @@
             }
             
             if (ruletaModel) ruletaModel.visible = true;
+            isTransitioning = true;
         }
 
         document.querySelectorAll(".mode-btn, .control-mode-btn").forEach(btn => {

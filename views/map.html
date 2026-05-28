@@ -245,6 +245,7 @@
         let targetCamPos    = new THREE.Vector3(0, 320, 460); // Scaled camera start
         let targetCamTarget = new THREE.Vector3(0, 0, 0);
         let currentCamTarget = new THREE.Vector3(0, 0, 0);
+        let isTransitioning = false;
 
         const casinoMarkers = [];
         const routeLines = [];
@@ -327,6 +328,11 @@
         controls.minDistance = 60; // adjusted for expanded scale
         controls.maxDistance = 840; // adjusted for expanded scale
         controls.enabled = false;
+        controls.addEventListener('start', () => {
+            if (mapMode === 'explore') {
+                isTransitioning = false;
+            }
+        });
 
         // Nocturnal City Lights and Moonlight Setup
         ambientLight = new THREE.AmbientLight(0x1a2238, 0.8);
@@ -1626,12 +1632,9 @@
             } else if (mode === 'explore') {
                 overlayExplore.classList.add('active');
                 casinoMarkers.forEach(m => m.visible = true);
-                controls.target.copy(currentCamTarget);
                 controls.enabled = true;
                 targetCamPos.set(0, 240, 400); targetCamTarget.set(0, 0, 0);
-                camera.position.copy(targetCamPos);
-                controls.target.copy(targetCamTarget);
-                controls.update();
+                isTransitioning = true;
             } else if (mode === 'story') {
                 overlayStory.style.display='block'; overlayStory.classList.add('active');
                 controls.enabled = false;
@@ -1683,7 +1686,21 @@
                 targetCamPos.set(Math.sin(a)*460, 290+Math.sin(time*0.09)*35, Math.cos(a)*460);
                 targetCamTarget.set(Math.sin(time*0.05)*30, 0, Math.cos(time*0.06)*20);
             }
-            if (controls.enabled) { controls.update(); }
+            if (controls.enabled) {
+                controls.update();
+                if (isTransitioning) {
+                    camera.position.lerp(targetCamPos, 0.035);
+                    currentCamTarget.lerp(targetCamTarget, 0.035);
+                    controls.target.copy(currentCamTarget);
+                    
+                    if (camera.position.distanceTo(targetCamPos) < 1.0 && currentCamTarget.distanceTo(targetCamTarget) < 1.0) {
+                        camera.position.copy(targetCamPos);
+                        currentCamTarget.copy(targetCamTarget);
+                        controls.target.copy(currentCamTarget);
+                        isTransitioning = false;
+                    }
+                }
+            }
             else {
                 camera.position.lerp(targetCamPos, 0.035);
                 currentCamTarget.lerp(targetCamTarget, 0.035);
@@ -1836,9 +1853,7 @@
             if (mapMode==='explore' && hoveredMarker) {
                 const idx = hoveredMarker.userData.index;
                 focusOnCasino(idx);
-                const p = toWorld(CASINOS_DATA[idx].px, CASINOS_DATA[idx].py);
-                controls.target.set(p.x, p.y + 12, p.z);
-                camera.position.set(p.x + 55, p.y + 65, p.z + 100);
+                isTransitioning = true;
             }
         });
         window.addEventListener('resize', () => {

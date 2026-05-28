@@ -332,6 +332,7 @@
         let targetCamPos    = new THREE.Vector3(0, 320, 460); 
         let targetCamTarget = new THREE.Vector3(0, 0, 0);
         let currentCamTarget = new THREE.Vector3(0, 0, 0);
+        let isTransitioning = false;
 
         const casinoMarkers = [];
         const routeLines = [];
@@ -412,6 +413,11 @@
         controls.minDistance = 60; 
         controls.maxDistance = 840; 
         controls.enabled = false;
+        controls.addEventListener('start', () => {
+            if (mapMode === 'explore') {
+                isTransitioning = false;
+            }
+        });
 
         ambientLight = new THREE.AmbientLight(0x1a2238, 0.8);
         scene.add(ambientLight);
@@ -1276,9 +1282,24 @@
                 updateTrafficSystem();
                 updateParticles();
 
-                camera.position.lerp(targetCamPos, 0.04);
-                currentCamTarget.lerp(targetCamTarget, 0.04);
-                controls.target.copy(currentCamTarget);
+                if (mapMode === 'explore') {
+                    if (isTransitioning) {
+                        camera.position.lerp(targetCamPos, 0.04);
+                        currentCamTarget.lerp(targetCamTarget, 0.04);
+                        controls.target.copy(currentCamTarget);
+                        
+                        if (camera.position.distanceTo(targetCamPos) < 1.0 && currentCamTarget.distanceTo(targetCamTarget) < 1.0) {
+                            camera.position.copy(targetCamPos);
+                            currentCamTarget.copy(targetCamTarget);
+                            controls.target.copy(currentCamTarget);
+                            isTransitioning = false;
+                        }
+                    }
+                } else {
+                    camera.position.lerp(targetCamPos, 0.04);
+                    currentCamTarget.lerp(targetCamTarget, 0.04);
+                    controls.target.copy(currentCamTarget);
+                }
 
                 // Rotations and beacons pulsating
                 casinoMarkers.forEach((cm, i) => {
@@ -1356,6 +1377,7 @@
             overlayExplore.classList.add('active');
             controls.enabled = true;
             targetCamPos.set(0, 240, 380); targetCamTarget.set(0, 0, 0);
+            isTransitioning = true;
         });
 
         btnStory.addEventListener('click', () => {
@@ -1430,6 +1452,7 @@
                 // Focus on selected casino in explore mode
                 targetCamTarget.copy(hoveredMarker.position);
                 targetCamPos.copy(hoveredMarker.position).add(new THREE.Vector3(0, 45, 65));
+                isTransitioning = true;
             }
         });
 
